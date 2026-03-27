@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BHC Clinical Decision Support</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --grn:#1D9E75;--grn-l:#E1F5EE;--grn-d:#0F6E56;
+  --red:#E24B4A;--red-l:#FCEBEB;--red-d:#A32D2D;
+  --amb:#EF9F27;--amb-l:#FAEEDA;--amb-d:#854F0B;
+  --blu:#378ADD;--blu-l:#E6F1FB;--blu-d:#185FA5;
+  --pur:#7F77DD;--pur-l:#EEEDFE;--pur-d:#3C3489;
+  --ora:#D85A30;--ora-l:#FAECE7;--ora-d:#4A1B0C;
+  --bg:#F5F3EE;--surf:#FFF;--surf2:#F0EDE6;
+  --t1:#1A1A18;--t2:#6B6A65;--t3:#A09F9A;
+  --b1:rgba(0,0,0,0.09);--b2:rgba(0,0,0,0.15);
+  --r:12px;--rs:8px;--f:"DM Sans",sans-serif;--fm:"DM Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);font-family:var(--f);color:var(--t1);}
+body{display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;min-height:100vh;}
+.wrap{width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;}
+.shell{width:100%;background:var(--surf);border-radius:32px;overflow:hidden;box-shadow:0 2px 40px rgba(0,0,0,.12);display:flex;flex-direction:column;min-height:700px;}
+.screen{display:none;flex-direction:column;flex:1;}.screen.active{display:flex;}
+.tbar{padding:20px 20px 14px;background:var(--surf);border-bottom:1px solid var(--b1);flex-shrink:0;}
+.back{font-size:13px;color:var(--grn);cursor:pointer;margin-bottom:6px;font-weight:500;}
+.tbar h2{font-size:20px;font-weight:600;letter-spacing:-.3px;}
+.tbar .sub{font-size:13px;color:var(--t2);margin-top:2px;}
+.prog-wrap{margin-top:10px;height:3px;background:var(--surf2);border-radius:2px;}
+.prog{height:3px;background:var(--grn);border-radius:2px;transition:width .4s;}
+.scroll{flex:1;overflow-y:auto;padding:16px 16px 24px;-webkit-overflow-scrolling:touch;}
+.bbar{padding:10px 14px 16px;background:var(--surf);border-top:1px solid var(--b1);display:flex;gap:8px;flex-shrink:0;}
+.btn{flex:1;padding:13px 16px;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(--f);transition:all .15s;}
+.btn:active{transform:scale(.97);}
+.btn-p{background:var(--grn);color:#fff;}
+.btn-s{background:var(--surf2);color:var(--t2);border:1px solid var(--b2);flex:none;padding:13px 14px;}
+.btn-d{background:var(--red);color:#fff;}
+.btn-w{background:var(--amb);color:#fff;}
+.btn-o{background:var(--ora);color:#fff;}
+.btn-ask{background:var(--pur-l);color:var(--pur-d);border:1px solid var(--pur);flex:none;padding:13px 14px;font-size:13px;}
+.lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:8px;margin-top:18px;}
+.lbl:first-child{margin-top:0;}
+.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--b1);padding:14px 16px;margin-bottom:10px;}
+.card h3{font-size:15px;font-weight:600;letter-spacing:-.2px;}
+.card p{font-size:13px;color:var(--t2);margin-top:3px;line-height:1.5;}
+.bdg{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:99px;}
+.bdg-g{background:var(--grn-l);color:var(--grn-d);}
+.bdg-r{background:var(--red-l);color:var(--red-d);}
+.bdg-a{background:var(--amb-l);color:var(--amb-d);}
+.bdg-p{background:var(--pur-l);color:var(--pur-d);}
+.bdg-o{background:var(--ora-l);color:var(--ora-d);}
+.opt{width:100%;padding:13px 15px;text-align:left;background:var(--surf);border:1px solid var(--b2);border-radius:var(--rs);font-size:14px;color:var(--t1);cursor:pointer;margin-bottom:8px;font-family:var(--f);line-height:1.5;transition:all .12s;}
+.opt.sel{border-color:var(--grn);border-width:1.5px;background:var(--grn-l);color:var(--grn-d);font-weight:500;}
+.opt.dsel{border-color:var(--red);border-width:1.5px;background:var(--red-l);color:var(--red-d);font-weight:500;}
+.chip{display:inline-flex;padding:7px 13px;border-radius:99px;font-size:13px;font-weight:500;border:1px solid var(--b2);cursor:pointer;margin:4px;background:var(--surf);color:var(--t2);font-family:var(--f);transition:all .12s;}
+.chip.sel{background:var(--grn-l);border-color:var(--grn);color:var(--grn-d);}
+.note{width:100%;border:1px solid var(--b2);border-radius:var(--rs);padding:11px 13px;font-size:13px;color:var(--t1);background:var(--surf);resize:none;height:72px;font-family:var(--f);line-height:1.6;}
+.note::placeholder{color:var(--t3);}
+.note:focus{outline:none;border-color:var(--grn);}
+.lang-tabs{display:flex;border-bottom:1px solid var(--b1);}
+.ltab{flex:1;padding:7px 4px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:var(--t3);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--f);}
+.ltab.on{color:var(--grn);border-bottom-color:var(--grn);}
+.hint{background:var(--surf2);border-radius:var(--rs);overflow:hidden;margin-bottom:14px;}
+.hint-inner{padding:12px 14px;}
+.script-line{font-size:14px;line-height:1.9;color:var(--t1);display:none;}
+.script-line.on{display:block;}
+.script-en{font-size:13px;color:var(--t2);font-style:italic;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--b1);}
+.why{font-size:12px;color:var(--t3);margin-top:6px;line-height:1.5;}
+.dec{border-radius:var(--r);padding:16px;margin-bottom:12px;border:1.5px solid;}
+.dec.g{background:var(--grn-l);border-color:var(--grn);}
+.dec.a{background:var(--amb-l);border-color:var(--amb);}
+.dec.r{background:var(--red-l);border-color:var(--red);}
+.dec h3{font-size:16px;font-weight:600;}
+.dec.g h3{color:var(--grn-d);}.dec.a h3{color:var(--amb-d);}.dec.r h3{color:var(--red-d);}
+.slist{list-style:none;margin-top:10px;}
+.slist li{font-size:13px;padding:4px 0 4px 18px;position:relative;line-height:1.5;}
+.slist li::before{content:"-->";position:absolute;left:0;}
+.dec.g .slist li{color:var(--grn-d);}.dec.a .slist li{color:var(--amb-d);}.dec.r .slist li{color:var(--red-d);}
+.tc{background:var(--grn-l);border:1px solid var(--grn);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;}
+.tc h4{font-size:14px;font-weight:600;color:var(--grn-d);}
+.tc p{font-size:13px;color:var(--grn-d);margin-top:5px;line-height:1.6;opacity:.9;}
+.srow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b1);gap:16px;}
+.srow:last-child{border-bottom:none;}
+.skey{font-size:13px;color:var(--t2);flex-shrink:0;}
+.sval{font-size:13px;font-weight:500;text-align:right;}
+.hdr{padding:22px 20px 14px;background:var(--surf);border-bottom:1px solid var(--b1);}
+.hdr h1{font-size:21px;font-weight:600;letter-spacing:-.4px;}
+.hdr p{font-size:13px;color:var(--t2);margin-top:3px;}
+.ucrd{background:var(--red-l);border:1px solid var(--red);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+.ucrd h3{font-size:15px;font-weight:600;color:var(--red-d);}
+.ucrd p{font-size:13px;color:var(--red-d);margin-top:3px;opacity:.8;}
+.slbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);padding:10px 0 6px;}
+.nav{display:flex;background:var(--surf);border-top:1px solid var(--b1);padding:10px 0;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.nd{width:6px;height:6px;border-radius:50%;background:var(--b2);}
+.ni.on .nd{background:var(--grn);}
+.nlbl{font-size:10px;color:var(--t3);font-weight:500;}
+.ni.on .nlbl{color:var(--grn);}
+.stbdg{font-size:11px;font-weight:600;color:var(--t3);font-family:var(--fm);}
+/* validation shake */
+.shake{animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.val-msg{font-size:12px;color:var(--red-d);padding:4px 0 8px;display:none;}
+.val-msg.show{display:block;}
+/* coaching modal */
+.cmodal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center;}
+.cmodal-bg.open{display:flex;}
+.cmodal{background:var(--surf);border-radius:24px 24px 0 0;width:100%;max-width:420px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;}
+.cmodal-head{padding:16px 18px 12px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.cspark{width:28px;height:28px;border-radius:50%;background:var(--pur);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cspark svg{width:13px;height:13px;}
+.cmodal-head h3{font-size:15px;font-weight:600;}
+.cstage{font-size:12px;color:var(--t3);margin-left:auto;}
+.cmodal-scroll{overflow-y:auto;flex:1;}
+.cmodal-body{padding:14px 18px 0;}
+.cblock{margin-bottom:14px;}
+.cblbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;padding:3px 8px;border-radius:99px;display:inline-block;}
+.cblbl.bhc{background:var(--blu-l);color:var(--blu-d);}
+.cblbl.pat{background:var(--grn-l);color:var(--grn-d);}
+.cblock p{font-size:14px;line-height:1.7;color:var(--t1);}
+.cblock .qt{color:var(--t2);font-style:italic;}
+.cloading{display:flex;align-items:center;gap:8px;padding:14px 0;}
+.cloading span{font-size:13px;color:var(--t3);}
+.cmodal-foot{padding:12px 18px 20px;display:flex;gap:8px;flex-shrink:0;}
+/* chat modal */
+.chat-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;min-height:200px;}
+.chat-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.6;}
+.chat-msg.user{background:var(--grn-l);color:var(--grn-d);align-self:flex-end;border-bottom-right-radius:4px;}
+.chat-msg.ai{background:var(--surf2);color:var(--t1);align-self:flex-start;border-bottom-left-radius:4px;}
+.chat-msg.ai.loading{color:var(--t3);}
+.chat-input-row{display:flex;gap:8px;padding:10px 14px 16px;border-top:1px solid var(--b1);flex-shrink:0;}
+.chat-inp{flex:1;padding:10px 13px;font-size:13px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--surf);color:var(--t1);font-family:var(--f);}
+.chat-inp:focus{outline:none;border-color:var(--pur);}
+.chat-send{background:var(--pur);color:#fff;border:none;border-radius:var(--rs);padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f);}
+.chat-limit{font-size:12px;color:var(--t3);text-align:center;padding:4px 0 8px;}
+/* follow-up session */
+.fu-card{background:var(--pur-l);border:1px solid var(--pur);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;}
+.fu-card h4{font-size:14px;font-weight:600;color:var(--pur-d);}
+.fu-card p{font-size:13px;color:var(--pur-d);margin-top:4px;line-height:1.5;opacity:.9;}
+/* setup */
+.swrap{padding:28px 22px;display:flex;flex-direction:column;gap:18px;flex:1;}
+.sico{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;}
+.swrap h2{font-size:21px;font-weight:600;letter-spacing:-.4px;line-height:1.3;}
+.swrap>p{font-size:13px;color:var(--t2);line-height:1.6;}
+.kf{width:100%;padding:13px 14px;font-size:13px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--surf2);color:var(--t1);font-family:var(--fm);letter-spacing:.03em;}
+.kf:focus{outline:none;border-color:var(--grn);background:var(--surf);}
+.knote{font-size:12px;color:var(--t3);line-height:1.5;}
+.stepc{background:var(--surf2);border-radius:var(--rs);padding:11px 14px;display:flex;gap:10px;align-items:flex-start;}
+.stepn{width:22px;height:22px;border-radius:50%;background:var(--grn);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.stepc p{font-size:13px;color:var(--t2);line-height:1.5;}
+.stepc a{color:var(--grn);font-weight:500;}
+.sbtn{background:var(--grn);color:#fff;border:none;border-radius:var(--rs);padding:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--f);width:100%;}
+.sbtn.sec{background:var(--surf2);color:var(--t2);border:1px solid var(--b2);}
+.errmsg{font-size:12px;color:var(--red-d);display:none;padding:3px 0;}
+.devnav{background:var(--surf);border-radius:16px;padding:12px 14px;border:1px solid var(--b1);}
+.devnav p{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:8px;}
+.devnav-row{display:flex;flex-wrap:wrap;gap:6px;}
+.dtab{padding:5px 11px;border-radius:99px;font-size:12px;font-weight:500;border:1px solid var(--b2);cursor:pointer;background:var(--surf);color:var(--t2);font-family:var(--f);}
+.dtab:hover{background:var(--grn-l);border-color:var(--grn);color:var(--grn-d);}
+.ti{width:100%;padding:12px 14px;font-size:14px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--surf);color:var(--t1);font-family:var(--f);}
+.ti:focus{outline:none;border-color:var(--grn);}
+.od-box{background:var(--red-l);border:2px solid var(--red);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;}
+.od-box h3{font-size:15px;font-weight:700;color:var(--red-d);}
+.od-step{font-size:13px;color:var(--red-d);padding:3px 0 3px 18px;position:relative;line-height:1.5;}
+.od-step::before{content:"-->";position:absolute;left:0;font-weight:700;}
+.score-card{border-radius:var(--r);padding:14px 16px;margin-bottom:12px;border:1.5px solid;}
+.score-card.low{background:var(--grn-l);border-color:var(--grn);}
+.score-card.mod{background:var(--amb-l);border-color:var(--amb);}
+.score-card.high{background:var(--ora-l);border-color:var(--ora);}
+.score-card.sev{background:var(--red-l);border-color:var(--red);}
+.score-num{font-size:32px;font-weight:700;line-height:1;}
+.score-card.low .score-num{color:var(--grn-d);}
+.score-card.mod .score-num{color:var(--amb-d);}
+.score-card.high .score-num{color:var(--ora-d);}
+.score-card.sev .score-num{color:var(--red-d);}
+.score-lbl{font-size:12px;font-weight:600;margin-top:2px;}
+.score-card.low .score-lbl{color:var(--grn-d);}
+.score-card.mod .score-lbl{color:var(--amb-d);}
+.score-card.high .score-lbl{color:var(--ora-d);}
+.score-card.sev .score-lbl{color:var(--red-d);}
+.case-pill{display:inline-flex;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;margin-bottom:2px;}
+.case-mat{background:var(--grn-l);color:var(--grn-d);}
+.case-ado{background:var(--pur-l);color:var(--pur-d);}
+.case-sub{background:var(--ora-l);color:var(--ora-d);}
+.warn-box{background:var(--ora-l);border:1px solid var(--ora);border-radius:var(--rs);padding:11px 14px;margin-top:12px;}
+.warn-box p{font-size:13px;color:var(--ora-d);line-height:1.6;}
+.file-banner{background:#1A1A18;color:#fff;padding:10px 16px;font-size:12px;line-height:1.6;display:none;border-radius:12px 12px 0 0;}
+.file-banner a{color:#5DCAA5;font-weight:600;}
+.file-banner strong{color:#EF9F27;}
+.dots{display:flex;gap:3px;}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--pur);animation:blink 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.25s;}.dot:nth-child(3){animation-delay:.5s;}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="devnav">
+  <p>Jump to screen</p>
+  <div class="devnav-row">
+    <button class="dtab" onclick="go('setup')">Setup</button>
+    <button class="dtab" onclick="go('home')">Home</button>
+    <button class="dtab" onclick="go('newcase')">New case</button>
+    <button class="dtab" onclick="go('session')">Session</button>
+    <button class="dtab" onclick="startFlow('maternal')">Maternal Q</button>
+    <button class="dtab" onclick="startFlow('adolescent')">Adolescent Q</button>
+    <button class="dtab" onclick="startFlow('substance')">Substance Q</button>
+    <button class="dtab" onclick="showRisk()">Risk</button>
+    <button class="dtab" onclick="go('decision');renderDecision()">Decision</button>
+    <button class="dtab" onclick="go('careplan');renderCarePlan()">Care plan</button>
+    <button class="dtab" onclick="go('followup')">Follow-up</button>
+    <button class="dtab" onclick="go('summary')">Summary</button>
+  </div>
+</div>
+<div class="shell">
+
+<!-- FILE:// WARNING BANNER -->
+<div class="file-banner" id="file-banner">
+  <strong>AI features need a web server to work.</strong> Open this file via <a href="https://github.com" target="_blank">GitHub Pages</a> or run <code>python3 -m http.server 8080</code> locally. See README for full instructions. All clinical flows work without AI.
+</div>
+
+<!-- SETUP -->
+<div class="screen active" id="screen-setup">
+  <div class="swrap">
+    <div class="sico" style="background:var(--grn-l);">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div>
+      <h2>BHC Clinical Decision Support</h2>
+      <p style="margin-top:6px;">Maternal, adolescent, and substance use flows in one tool. Scripts in Hindi, Khasi, Garo, and Punjabi. Powered by OpenRouter AI (free tier available).</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div class="stepc"><div class="stepn">1</div><p>Go to <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a> and sign up (free)</p></div>
+      <div class="stepc"><div class="stepn">2</div><p>Click <strong>Create Key</strong> -- free credits included, no billing needed to start</p></div>
+      <div class="stepc"><div class="stepn">3</div><p>Paste key below. Starts with <strong>sk-or-</strong>. Stays in this browser only.</p></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-top:0;">Gemini API Key (optional)</div>
+      <input class="kf" type="password" id="api-key-input" placeholder="sk-or-v1-..." autocomplete="off"/>
+      <p class="errmsg" id="key-err">Please enter a valid OpenRouter key (starts with sk-or-)</p>
+      <p class="knote" style="margin-top:7px;">Stored in this browser tab only.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="sbtn" onclick="saveKey()">Save key and enter app</button>
+      <button class="sbtn sec" onclick="demoStart()">Skip -- explore without AI</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen" id="screen-home">
+  <div class="hdr">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><h1>Good morning</h1><p>BHC Fellow</p></div>
+      <span id="ai-badge" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;cursor:pointer;" onclick="go('setup')"></span>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="slbl">Urgent</div>
+    <div class="ucrd" onclick="go('session')">
+      <h3>Devi S. <span class="bdg bdg-r" style="float:right;">High risk</span></h3>
+      <p>Maternal -- flagged yesterday</p>
+    </div>
+    <div class="slbl">Follow-ups today</div>
+    <div class="card" style="cursor:pointer;" onclick="loadFollowUp('maternal','Rani M.','Week 28','moderate','Behavioral activation -- walk daily')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><span class="case-pill case-mat">Maternal</span><h3>Rani M.</h3><p>Week 28 -- Session 3</p></div>
+        <span class="bdg bdg-a">Today</span>
+      </div>
+    </div>
+    <div class="card" style="cursor:pointer;" onclick="loadFollowUp('adolescent','Preethi R.','Age 16, anxiety','low','Daily breathing exercise')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><span class="case-pill case-ado">Adolescent</span><h3>Preethi R.</h3><p>Age 16 -- Session 2</p></div>
+        <span class="bdg bdg-g">Due</span>
+      </div>
+    </div>
+    <div class="card" style="cursor:pointer;" onclick="loadFollowUp('substance','Balvinder K.','Opioid use','moderate','Reduce use by 1x this week')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><span class="case-pill case-sub">Substance</span><h3>Balvinder K.</h3><p>Opioid use -- Session 3</p></div>
+        <span class="bdg bdg-a">Today</span>
+      </div>
+    </div>
+    <div style="height:8px;"></div>
+    <button style="float:right;background:var(--grn);color:#fff;border:none;border-radius:99px;padding:13px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--f);box-shadow:0 4px 16px rgba(29,158,117,.28);" onclick="go('newcase')">+ New case</button>
+  </div>
+  <div class="nav">
+    <div class="ni on"><div class="nd"></div><span class="nlbl">Home</span></div>
+    <div class="ni"><div class="nd"></div><span class="nlbl">Cases</span></div>
+    <div class="ni"><div class="nd"></div><span class="nlbl">Alerts</span></div>
+    <div class="ni"><div class="nd"></div><span class="nlbl">Profile</span></div>
+  </div>
+</div>
+
+<!-- NEW CASE -->
+<div class="screen" id="screen-newcase">
+  <div class="tbar">
+    <div class="back" onclick="go('home')">Back</div>
+    <h2>New case</h2>
+  </div>
+  <div class="scroll">
+    <div class="lbl">Name or alias</div>
+    <input class="ti" type="text" id="nc-name" placeholder="E.g. Rani or P-042"/>
+    <div class="lbl">Case type</div>
+    <div class="val-msg" id="val-casetype">Please select a case type</div>
+    <button class="opt" id="ct-mat" onclick="selCase('maternal')">Maternal health</button>
+    <button class="opt" id="ct-ado" onclick="selCase('adolescent')">Adolescent mental health (13-19 yrs)</button>
+    <button class="opt" id="ct-sub" onclick="selCase('substance')">Substance use</button>
+    <div class="lbl">Default language for scripts</div>
+    <div style="display:flex;flex-wrap:wrap;margin:-4px;">
+      <button class="chip sel" onclick="setLang(this,'hi')">Hindi</button>
+      <button class="chip" onclick="setLang(this,'kh')">Khasi</button>
+      <button class="chip" onclick="setLang(this,'ga')">Garo</button>
+      <button class="chip" onclick="setLang(this,'pu')">Punjabi</button>
+    </div>
+    <div id="sub-extra" style="display:none;">
+      <div class="lbl">Primary substance</div>
+      <button class="opt sel" id="sub-h" onclick="selSub('h')">Heroin / smack (chitta)</button>
+      <button class="opt" id="sub-o" onclick="selSub('o')">Pharmaceutical opioids</button>
+      <button class="opt" id="sub-m" onclick="selSub('m')">Multiple / mixed</button>
+    </div>
+    <div id="ado-extra" style="display:none;">
+      <div class="lbl">Main presenting issue</div>
+      <button class="opt sel" id="ado-anx" onclick="selAdo('anx')">Anxiety / worry</button>
+      <button class="opt" id="ado-dep" onclick="selAdo('dep')">Low mood / depression</button>
+      <button class="opt" id="ado-sh" onclick="selAdo('sh')">Self-harm concern</button>
+      <button class="opt" id="ado-beh" onclick="selAdo('beh')">Behaviour / anger</button>
+      <button class="opt" id="ado-mix" onclick="selAdo('mix')">Mixed / unsure</button>
+    </div>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-s" onclick="go('home')">Cancel</button>
+    <button class="btn btn-p" onclick="startFromNewCase()">Start session</button>
+  </div>
+</div>
+
+<!-- SESSION START -->
+<div class="screen" id="screen-session">
+  <div class="tbar">
+    <div class="back" onclick="go('newcase')">Back</div>
+    <h2>Session start</h2>
+    <div class="sub" id="sess-sub">--</div>
+  </div>
+  <div class="scroll">
+    <div class="lbl">Visit type</div>
+    <div class="val-msg" id="val-visit">Please select a visit type</div>
+    <button class="opt sel" id="v1" onclick="selV('v1')">Home visit</button>
+    <button class="opt" id="v2" onclick="selV('v2')">Phone / video call</button>
+    <button class="opt" id="v3" onclick="selV('v3')">Clinic / centre</button>
+    <div class="lbl">Who is present?</div>
+    <div id="present-chips" style="display:flex;flex-wrap:wrap;margin:-4px;"></div>
+    <div class="lbl">Session number</div>
+    <div style="display:flex;flex-wrap:wrap;margin:-4px;" id="sess-num-chips">
+      <button class="chip sel" onclick="selSessNum(this,1)">1st</button>
+      <button class="chip" onclick="selSessNum(this,2)">2nd</button>
+      <button class="chip" onclick="selSessNum(this,3)">3rd+</button>
+    </div>
+    <div id="od-warn" class="warn-box" style="display:none;">
+      <p>Always check for overdose signs before beginning. Tap below if concerned.</p>
+    </div>
+  </div>
+  <div class="bbar" id="sess-bbar"></div>
+</div>
+
+<!-- OVERDOSE SCREEN -->
+<div class="screen" id="screen-overdose">
+  <div class="tbar">
+    <div class="back" onclick="go('session')">Back</div>
+    <h2>Overdose safety check</h2>
+    <div class="sub">Check before every substance session</div>
+  </div>
+  <div class="scroll">
+    <div class="od-box">
+      <h3>Call 112 if you see any of these</h3>
+      <div style="margin-top:8px;">
+        <div class="od-step">Not responding / unconscious</div>
+        <div class="od-step">Very slow or no breathing</div>
+        <div class="od-step">Blue lips or fingertips</div>
+        <div class="od-step">Pinpoint pupils</div>
+        <div class="od-step">Gurgling or choking sounds</div>
+      </div>
+    </div>
+    <div class="lbl">Is the person conscious now?</div>
+    <div class="val-msg" id="val-od1">Please select an answer</div>
+    <button class="opt" id="od1a" onclick="selOD('od1','a')">Yes -- awake and talking</button>
+    <button class="opt" id="od1b" onclick="selOD('od1','b')">Drowsy but responding</button>
+    <button class="opt" id="od1c" onclick="selOD('od1','c',true)">Not responding</button>
+    <div class="lbl">When did they last use?</div>
+    <div class="val-msg" id="val-od2">Please select an answer</div>
+    <button class="opt" id="od2a" onclick="selOD('od2','a')">More than 6 hours ago</button>
+    <button class="opt" id="od2b" onclick="selOD('od2','b')">Within the last 6 hours</button>
+    <button class="opt" id="od2c" onclick="selOD('od2','c')">Just now</button>
+    <div class="lbl">Any overdose signs visible?</div>
+    <div class="val-msg" id="val-od3">Please select an answer</div>
+    <button class="opt" id="od3a" onclick="selOD('od3','a')">No -- looks okay</button>
+    <button class="opt" id="od3b" onclick="selOD('od3','b',true)">Yes -- warning signs visible</button>
+    <div id="od-emergency" style="display:none;margin-top:14px;" class="od-box">
+      <h3>Call 112 now</h3>
+      <div style="margin-top:8px;">
+        <div class="od-step">Call 112 immediately</div>
+        <div class="od-step">Turn on side (recovery position)</div>
+        <div class="od-step">Give Naloxone if available</div>
+        <div class="od-step">Stay until ambulance arrives</div>
+      </div>
+    </div>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-d" style="flex:none;padding:13px 16px;" onclick="window.location.href='tel:112'">Call 112</button>
+    <button class="btn btn-p" onclick="validateOD()">Continue to assessment</button>
+  </div>
+</div>
+
+<!-- FOLLOW-UP SESSION -->
+<div class="screen" id="screen-followup">
+  <div class="tbar">
+    <div class="back" onclick="go('session')">Back</div>
+    <h2>Follow-up check-in</h2>
+    <div class="sub" id="fu-sub">Session 2+</div>
+  </div>
+  <div class="scroll">
+    <div class="fu-card" id="fu-last-plan">
+      <h4>Last session plan</h4>
+      <p id="fu-plan-text">--</p>
+    </div>
+
+    <div class="lbl">Did they complete the action from last time?</div>
+    <div class="val-msg" id="val-fu1">Please select an answer</div>
+    <button class="opt" id="fu1a" onclick="selFU('fu1','a')">Yes -- did it</button>
+    <button class="opt" id="fu1b" onclick="selFU('fu1','b')">Partly -- tried but not fully</button>
+    <button class="opt" id="fu1c" onclick="selFU('fu1','c')">No -- did not manage to</button>
+    <button class="opt" id="fu1d" onclick="selFU('fu1','d')">Not relevant -- situation changed</button>
+
+    <div class="lbl" id="fu-mood-lbl">How are they today?</div>
+    <div class="val-msg" id="val-fu2">Please select an answer</div>
+    <div id="fu-mood-opts"></div>
+
+    <div class="lbl">What does the BHC want to focus on today?</div>
+    <div class="fu-card" id="fu-suggested-focus" style="margin-bottom:8px;">
+      <h4>Suggested based on last session</h4>
+      <p id="fu-focus-suggestion">--</p>
+    </div>
+    <div class="val-msg" id="val-fu3">Please select a focus for today</div>
+    <div id="fu-focus-opts"></div>
+
+    <div class="lbl">Additional note (optional)</div>
+    <textarea class="note" id="fu-note" placeholder="Anything important that happened since last session..."></textarea>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+    <button class="btn btn-p" onclick="validateAndProceedFU()">Continue</button>
+  </div>
+</div>
+
+<!-- GUIDED QUESTIONS (assessment) -->
+<div class="screen" id="screen-guided">
+  <div class="tbar">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div class="back" onclick="go('session')">Back</div>
+      <span class="stbdg" id="qlabel">Step 1 of 5</span>
+    </div>
+    <h2 id="qtitle">--</h2>
+    <div class="prog-wrap"><div class="prog" id="qprog" style="width:20%"></div></div>
+  </div>
+  <div class="scroll">
+    <div class="hint" id="q-hint">
+      <div class="lang-tabs" id="lang-tabs">
+        <button class="ltab" data-lang="hi" onclick="switchLang('hi')">Hindi</button>
+        <button class="ltab" data-lang="kh" onclick="switchLang('kh')">Khasi</button>
+        <button class="ltab" data-lang="ga" onclick="switchLang('ga')">Garo</button>
+        <button class="ltab" data-lang="pu" onclick="switchLang('pu')">Punjabi</button>
+      </div>
+      <div class="hint-inner">
+        <div class="script-en" id="q-en">--</div>
+        <div class="script-line" id="q-hi">--</div>
+        <div class="script-line" id="q-kh">--</div>
+        <div class="script-line" id="q-ga">--</div>
+        <div class="script-line" id="q-pu">--</div>
+        <div class="why" id="q-why">--</div>
+      </div>
+    </div>
+    <div class="val-msg" id="val-q">Please select an answer before continuing</div>
+    <div id="qopts"></div>
+    <div class="lbl">Note (optional)</div>
+    <textarea class="note" id="qnote" placeholder="Context from conversation..."></textarea>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+    <button class="btn btn-p" id="qnextbtn" onclick="nextQ()">Next</button>
+  </div>
+</div>
+
+<!-- RISK CHECK -->
+<div class="screen" id="screen-risk">
+  <div class="tbar">
+    <div class="back" onclick="go('guided')">Back</div>
+    <h2>Risk check</h2>
+    <div class="sub">Ask all -- every session</div>
+  </div>
+  <div class="scroll" id="risk-scroll"></div>
+  <div class="bbar">
+    <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+    <button class="btn btn-p" id="rkbtn" onclick="validateAndEvalRisk()">Evaluate risk</button>
+  </div>
+</div>
+
+<!-- DECISION -->
+<div class="screen" id="screen-decision">
+  <div class="tbar">
+    <div class="back" onclick="go('risk')">Back</div>
+    <h2>Decision</h2>
+    <div class="sub">Based on today</div>
+  </div>
+  <div class="scroll">
+    <div id="score-display"></div>
+    <div id="decout"></div>
+    <div class="lbl">What not to do</div>
+    <div class="card" style="cursor:default;"><p style="font-size:13px;color:var(--t2);" id="ntd">--</p></div>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+    <button class="btn btn-p" id="decnxt" onclick="showCoach('decision','careplan')">Care plan</button>
+  </div>
+</div>
+
+<!-- CARE PLAN -->
+<div class="screen" id="screen-careplan">
+  <div class="tbar">
+    <div class="back" onclick="go('decision')">Back</div>
+    <h2>Care plan</h2>
+    <div class="sub" id="cp-sub">--</div>
+  </div>
+  <div class="scroll"><div id="cp-content"></div></div>
+  <div class="bbar">
+    <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+    <button class="btn btn-p" onclick="showCoach('careplan','summary')">Generate summary</button>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="screen" id="screen-summary">
+  <div class="tbar">
+    <div class="back" onclick="go('careplan')">Back</div>
+    <h2>Session summary</h2>
+    <div class="sub" id="sum-sub">--</div>
+  </div>
+  <div class="scroll">
+    <div class="lbl" style="margin-top:0;">Session data</div>
+    <div class="card" style="cursor:default;" id="sum-card"></div>
+    <div class="lbl">Next contact</div>
+    <div style="display:flex;flex-wrap:wrap;margin:-4px;">
+      <button class="chip sel" onclick="chipX(this)">3 days</button>
+      <button class="chip" onclick="chipX(this)">5 days</button>
+      <button class="chip" onclick="chipX(this)">1 week</button>
+    </div>
+    <div class="lbl">Refer / escalate?</div>
+    <div style="display:flex;flex-wrap:wrap;margin:-4px;" id="sum-refer"></div>
+    <div style="background:var(--grn-l);border-radius:var(--rs);padding:11px 14px;margin-top:16px;">
+      <p style="font-size:13px;color:var(--grn-d);font-weight:500;">Session saved. Will sync when online.</p>
+    </div>
+  </div>
+  <div class="bbar">
+    <button class="btn btn-s" onclick="go('home')">Home</button>
+    <button class="btn btn-p">Close session</button>
+  </div>
+</div>
+
+<!-- COACHING MODAL (between stages) -->
+<div class="cmodal-bg" id="cmodal-bg">
+  <div class="cmodal">
+    <div class="cmodal-head">
+      <div class="cspark"><svg viewBox="0 0 10 10" fill="white"><polygon points="5,1 6.2,4 9,4 6.8,6 7.5,9 5,7.2 2.5,9 3.2,6 1,4 3.8,4"/></svg></div>
+      <h3>Before you continue</h3>
+      <span class="cstage" id="cmodal-stage"></span>
+    </div>
+    <div class="cmodal-scroll">
+      <div class="cmodal-body">
+        <div class="cloading" id="cloading"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Thinking...</span></div>
+        <div id="cmodal-content" style="display:none;">
+          <div class="cblock"><span class="cblbl bhc">Tip for you</span><p id="cbhc-text"></p></div>
+          <div class="cblock"><span class="cblbl pat">Say to patient</span><p class="qt" id="cpat-text"></p></div>
+        </div>
+      </div>
+    </div>
+    <div class="cmodal-foot">
+      <button class="btn btn-ask" onclick="openChat()">Ask AI</button>
+      <button class="btn btn-p" onclick="closeCoach()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT MODAL (Ask AI) -->
+<div class="cmodal-bg" id="chat-bg">
+  <div class="cmodal">
+    <div class="cmodal-head">
+      <div class="cspark" style="background:var(--pur);"><svg viewBox="0 0 10 10" fill="white"><path d="M2 2h6v5H6l-2 2V7H2z" fill="white"/></svg></div>
+      <h3>Ask AI guidance</h3>
+      <span class="cstage" id="chat-limit-display">5 messages left</span>
+    </div>
+    <div class="chat-body" id="chat-body">
+      <div class="chat-msg ai" id="chat-intro">I know you are a BHC -- a trained community health worker, not a therapist. Ask me anything about this session: what to say, how to handle a difficult moment, or what support options exist. I will give you practical guidance grounded in social care and motivational interviewing principles.</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-inp" id="chat-inp" type="text" placeholder="Type your question..." onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="chat-send" onclick="sendChat()">Send</button>
+    </div>
+    <div style="padding:0 14px 12px;"><button style="width:100%;background:none;border:none;font-size:13px;color:var(--t3);cursor:pointer;font-family:var(--f);" onclick="closeChat()">Close</button></div>
+  </div>
+</div>
+
+</div><!-- shell -->
+</div><!-- wrap -->
+<script>
+
+var geminiKey='', aiOn=false;
+var curQ=0, riskMap={}, risk='lo', answers=[], score=0;
+var caseType='maternal', adoType='mix', subType='h';
+var coachNextScreen='', activeLang='hi', sessionNum=1;
+var chatHistory=[], chatCount=0, chatMax=5;
+var fuData={action:'',mood:'',focus:''};
+var lastPlan='', lastRisk='lo';
+var odAnswers={};
+
+// ── QUESTION BANKS ──────────────────────────────────────────────────────────
+var FLOWS = {
+maternal:[
+  {t:"Overall mood",
+   en:"How have you been feeling this week -- mood, energy, sleep?",
+   hi:"Is hafte tum kaisi feel kar rahi ho -- mood, taakat, aur neend kaisi rahi?",
+   kh:"Sngewbha namar da ngi harum hadien ia phi -- mood, snam, bad jingiso?",
+   ga:"Nangna habiba tangaha -- mood, sni, jisu gimin?",
+   pu:"Is hafte tenu kida feel ho raha si -- mood, taaqat, neend kaisi si?",
+   why:"Baseline wellbeing and change from last session.",
+   opts:["Feeling well","Some low mood or tiredness","Very low mood or hopeless","Refuses to engage"],
+   scores:[0,1,2,3]},
+  {t:"Sleep and appetite",
+   en:"Are you sleeping and eating enough?",
+   hi:"Kya tum theek se so rahi ho aur kha rahi ho?",
+   kh:"Phi la iso bad jingkurim bad ba bha?",
+   ga:"Neng iso pilak, bimba neng ongtabana?",
+   pu:"Ki tu theek neend le rahi hai te kha rahi hai?",
+   why:"Poor sleep and appetite are early risk indicators.",
+   opts:["Both normal","One disrupted but managing","Both significantly affected"],
+   scores:[0,1,2]},
+  {t:"Support at home",
+   en:"Who can you talk to when you are struggling?",
+   hi:"Jab tum pareshan ho tab kisse baat kar sakti ho ghar mein?",
+   kh:"Hamar phi lah ia u phi ka ban bha ia phi?",
+   ga:"Angna ong bimba nang donga ang?",
+   pu:"Jado tu pareshaan hundi hai ta kaun hai jis naal gal kar sakdi hai?",
+   why:"Social isolation is a major risk amplifier.",
+   opts:["Has good support","Some support but limited","Feels alone"],
+   scores:[0,1,2]},
+  {t:"Daily functioning",
+   en:"Are you able to do your usual activities -- cooking, childcare, work?",
+   hi:"Kya tum apna rozana ka kaam kar pa rahi ho -- khana banana, bachche ki dekhbhal?",
+   kh:"Phi lah ia ki jingim ban bha ia phi -- jingphan, jingkur ia ki buit?",
+   ga:"Nang ong ia bimba salsa habiba -- nang gisik, bimba ong nang?",
+   pu:"Ki tu apne rozaana de kaam kar sakdi hai -- khana banana, bacche dekhna?",
+   why:"Functional impairment guides care intensity.",
+   opts:["Managing well","Some difficulty","Struggling to manage daily tasks"],
+   scores:[0,1,2]},
+  {t:"Worries about baby",
+   en:"Do you have worries about the baby, birth, or what comes after?",
+   hi:"Kya tum bacche, delivery ya uske baad ki chinta mein ho?",
+   kh:"Phi lah ia ki jingphang ia u buit, jingsneng bad ba bha ia phi?",
+   ga:"Nang bimba angna nang ong bimba salsa chikon?",
+   pu:"Ki tenu bacche, delivery ya baad baare koi chinta hai?",
+   why:"Perinatal anxiety is often understated.",
+   opts:["Not particularly worried","Some worries -- manageable","Constant hard-to-control worry"],
+   scores:[0,1,2]}
+],
+adolescent:{
+  anx:[
+    {t:"Main worry",
+     en:"What has been worrying you most lately? You can say anything.",
+     hi:"Aajkal tumhe sabse zyada kya chinta ho rahi hai? Kuch bhi baat kar sakte ho.",
+     kh:"Ngi ki dei ba phi shim ia phi bad? Phi lah ia ki bynta.",
+     ga:"Habana ong nang angna nang donga ang? Nang ong bimba salsa.",
+     pu:"Ajkal tenu sabto zaada ki chinta hai? Kuch vi das sakde ho.",
+     why:"Open exploration reduces shame and builds trust.",
+     opts:["School / exams","Family problems","Friend / relationship issues","Health worries","Cannot say"],
+     scores:[1,1,1,1,1]},
+    {t:"Physical symptoms",
+     en:"When you worry, does your body react -- fast heartbeat, sweating, hard to breathe?",
+     hi:"Jab chinta hoti hai kya shareer bhi react karta hai -- dil tez dhakna, paseena, saans mein takleef?",
+     kh:"Ka ban bha phi shim, phi sngewbha ia u jingim -- u por shim, jingmat, jingduh?",
+     ga:"Angna nang donga ang, nang sni bimba -- jisu ong nang, chama, bimba ong?",
+     pu:"Jado chinta hundi hai, shareer vi react karda hai -- dil tez dhakna, paseena, saans lena mushkil?",
+     why:"Somatic symptoms help gauge severity.",
+     opts:["No physical symptoms","Sometimes -- mild","Often and quite intense","Almost always, very disturbing"],
+     scores:[0,1,2,3]},
+    {t:"Sleep",
+     en:"How is your sleep? Do you lie awake worrying at night?",
+     hi:"Tumhari neend kaisi hai? Kya raat mein sochte rehte ho?",
+     kh:"Phi iso bha? Phi shim ka ryngkew bad phi iso?",
+     ga:"Neng iso bimba? Nang bimba iso pilak?",
+     pu:"Teri neend kaidi hai? Raat nu sochda rehna hai?",
+     why:"Sleep disruption is a reliable anxiety indicator.",
+     opts:["Sleeping fine","Some trouble falling asleep","Frequently waking or lying awake","Very poor -- exhausted"],
+     scores:[0,1,2,3]},
+    {t:"Avoidance",
+     en:"Are you avoiding things because of worry -- school, friends, going out?",
+     hi:"Kya chinta ki wajah se kuch cheezein band kar di hain -- school, dost, bahar jaana?",
+     kh:"Phi shim ia ki bynta bad phi dkhaw -- school, ki sngewbha?",
+     ga:"Nang donga ang bimba ong ia ki salsa -- school, sngewbha?",
+     pu:"Ki chinta de karan kuj cheezaan band kar diyan -- school, dost, bahar jaana?",
+     why:"Avoidance maintains anxiety -- key for care planning.",
+     opts:["Not avoiding anything","Avoiding some things occasionally","Avoiding several things regularly","Stopped going out or school"],
+     scores:[0,1,2,3]}
+  ],
+  dep:[
+    {t:"How are you feeling",
+     en:"How have you been feeling most days -- happy, sad, empty, something else?",
+     hi:"Zyaadatar dino mein kaisa feel hua -- khush, udaas, khali?",
+     kh:"Phi sngewbha nangno ka por naduh -- sngewbha bha, duk, sngap?",
+     ga:"Nang sni pilak -- bimba ong, donga ang, bimba salsa?",
+     pu:"Zyaadatar dina kida feel hoiya -- khush, udaas, khaali?",
+     why:"Identifies affective state and severity.",
+     opts:["Okay -- some good days","Low but some ok moments","Mostly sad or empty","Completely numb or hopeless"],
+     scores:[0,1,2,3]},
+    {t:"Interest and energy",
+     en:"Have you lost interest in things you used to enjoy?",
+     hi:"Jo cheezein pehle pasand thi -- khel, dost, shauk -- unme interest khatam ho gaya?",
+     kh:"Phi lah ia ki bynta ba phi shim -- kynmaw, ki sngewbha?",
+     ga:"Nang donga ang bimba ong ia ki salsa -- game, sngewbha?",
+     pu:"Ki jo cheezaan pehle pasand si unach dilchaspi khatam ho gayi?",
+     why:"Anhedonia is a core depression symptom.",
+     opts:["Still enjoying things","Less interest than before","Rarely enjoy anything","Nothing interests me"],
+     scores:[0,1,2,3]},
+    {t:"Self-worth",
+     en:"Do you ever feel like a burden or like you are not good enough?",
+     hi:"Kabhi lagta hai ki tum bojh ho ya kaafi nahi ho?",
+     kh:"Phi shim ia phi lah ia u boit bad jingim?",
+     ga:"Nang donga ang bimba ong ia nang?",
+     pu:"Kade lagda hai ki tu bojh hai ya kaafi nahi hai?",
+     why:"Negative self-concept predicts severity and self-harm risk.",
+     opts:["Feel okay about myself","Sometimes doubt myself","Often feel worthless or a burden","Always feel like nothing"],
+     scores:[0,1,2,3]},
+    {t:"Daily functioning",
+     en:"Are you going to school and managing daily things?",
+     hi:"Kya tum school ja rahe ho aur rojana kaam kar pa rahe ho?",
+     kh:"Phi dem ia school bad jingim ka ryngkew?",
+     ga:"Nang ong ia school bad bimba ong ia ki salsa?",
+     pu:"Ki tu school ja raha hai te rozaana kaam kar sakda hai?",
+     why:"Functional impact guides care intensity.",
+     opts:["Managing fine","Some difficulty but going","Frequently missing school","Stopped going"],
+     scores:[0,1,2,3]}
+  ],
+  sh:[
+    {t:"Opening -- what is going on",
+     en:"Can you tell me what has been happening for you lately? I will not judge you.",
+     hi:"Kya mujhe bata sakte ho ki aajkal kya ho raha hai? Main judge nahi karunga.",
+     kh:"Phi lah ia ki bynta ba phi shim ia phi bad? Nga kynmaw ia phi.",
+     ga:"Nang ong bimba salsa angna nang donga ang? Nga bimba ong ia nang.",
+     pu:"Ki tu mujhe das sakda hai ki ajkal tera kya chal raha hai? Main judge nahi karanga.",
+     why:"Non-judgmental opening builds safety for disclosure.",
+     opts:["Shared openly","Shared some things","Very reluctant to talk","Refused to engage"],
+     scores:[0,1,2,3]},
+    {t:"Self-harm thoughts",
+     en:"Sometimes when people feel very overwhelmed they think about hurting themselves. Has that happened for you?",
+     hi:"Kabhi kabhi jab log bahut overwhelmed hote hain to apne aap ko hurt karne ke baare mein sochte hain. Kya aisa hua hai?",
+     kh:"Ka ban bha ki por ki jingsneng ia ki jingim shim ia ki bynta. Phi sngewbha nangno?",
+     ga:"Pilak nang donga ang bimba ong ia nang?",
+     pu:"Kabhi kabhi jado log bahut overwhelmed hunde ne to apne aap nu hurt karne baare sochde ne. Ki aisa hoya?",
+     why:"Direct question reduces risk -- never increases it.",
+     opts:["No -- denies any thoughts","Had thoughts but no plan","Has a plan but no intent to act","Has acted or intends to act soon"],
+     scores:[0,2,3,4]},
+    {t:"Triggers",
+     en:"What usually happens just before you feel that way?",
+     hi:"Jab aisa feel hota hai, usse pehle kya hota hai?",
+     kh:"Ki bynta ba phi shim ia phi ka por phi sngewbha nangno?",
+     ga:"Angna nang donga ang pilak nang sni bimba ong ia nang?",
+     pu:"Jado aisa feel hunda hai, usse pehle ki hunda hai?",
+     why:"Identifying triggers enables safety planning.",
+     opts:["Family conflict","School or peer pressure","Alone and overthinking","Feeling rejected","Cannot identify a trigger"],
+     scores:[1,1,1,1,1]},
+    {t:"Who keeps them safe",
+     en:"Is there anyone or anything that helps you feel safer or stops you?",
+     hi:"Koi hai ya koi cheez hai jo tumhe safe feel karaati hai ya ruk jaate ho?",
+     kh:"U bad ba shim ia phi lah ia phi sngewbha bha?",
+     ga:"Nang donga ang bimba ong ia nang pilak ong nang bimba?",
+     pu:"Koi hai ya koi cheez jo tenu safe feel karaundi hai ya rokdi hai?",
+     why:"Protective factors directly inform safety planning.",
+     opts:["Strong -- person or reason they can name","Weak -- something but not reliable","None identified"],
+     scores:[0,1,2]}
+  ],
+  beh:[
+    {t:"Last incident",
+     en:"Tell me about the last time you lost your temper or got into trouble. What happened?",
+     hi:"Pichli baar ke baare mein batao jab gussa aaya ya takleef hui. Kya hua tha?",
+     kh:"Phi lah ia ki bynta ka por phi shim ia u jingsneng. Ki jingthmu?",
+     ga:"Nang ong bimba salsa pilak nang donga ang bimba ong ia nang.",
+     pu:"Pichhli vaari baare das jado gussa aaya ya museebat hoi. Ki hoya si?",
+     why:"Understanding triggers is the foundation of behavioural work.",
+     opts:["Home or family conflict","School or peer conflict","Boredom","Substances involved","Cannot explain"],
+     scores:[1,1,1,2,1]},
+    {t:"Frequency",
+     en:"How often does this happen -- getting angry, fighting, or getting into trouble?",
+     hi:"Yeh kitni baar hota hai -- gussa, larai, ya musibat?",
+     kh:"Ki por shim ia ki bynta -- jingsneng, jingkhang?",
+     ga:"Pilak nang ong ia ki salsa -- jisu ong nang?",
+     pu:"Eh kitni vaari hunda hai -- gussa, larai, ya museebat?",
+     why:"Frequency determines severity and urgency.",
+     opts:["Rarely -- once a month","Sometimes -- weekly","Often -- several times a week","Daily"],
+     scores:[0,1,2,3]},
+    {t:"Consequences",
+     en:"Has this caused serious problems -- suspension, family conflict, injury?",
+     hi:"Kya isse ghar ya school mein badi problems aayi hain?",
+     kh:"Ki bynta beit lah ia jingthmu -- suspension, ki jingsneng ia ka jingim?",
+     ga:"Nang donga ang bimba ong ia ki salsa bimba -- suspension?",
+     pu:"Ki iss karan ghar ya school vich vaddi problems aayi ne?",
+     why:"Consequence severity informs escalation.",
+     opts:["No serious consequences","Some tension or warnings","Suspension or family crisis","Legal trouble or injury to others"],
+     scores:[0,1,2,3]},
+    {t:"Self-awareness",
+     en:"When the anger comes, can you feel it building before it happens?",
+     hi:"Jab gussa aata hai, kya tum usse pehle se feel karte ho?",
+     kh:"Ka ban bha u sngewbha, phi shim ia u ka por?",
+     ga:"Pilak nang ong ia u sngewbha, nang sni pilak ia u?",
+     pu:"Jado gussa aunda hai, ki tenu pehle hi feel hunda hai?",
+     why:"Self-awareness is the starting point for emotion regulation.",
+     opts:["Can usually feel it coming","Sometimes aware","Rarely aware","No awareness"],
+     scores:[0,1,2,3]}
+  ],
+  mix:[
+    {t:"Overall check-in",
+     en:"How are you doing in general? School, home, friends -- anything difficult?",
+     hi:"Tumhara kya haal hai? School, ghar, dosto ke saath -- kuch mushkil chal raha hai?",
+     kh:"Phi lah ia phi nangno? School, jingim, ki sngewbha -- ki bynta ba bha?",
+     ga:"Nang sni bimba? School, nang ong, sngewbha -- bimba ong nang?",
+     pu:"Tera kida haal hai? School, ghar, dosty naal -- kuch mushkil chal raha hai?",
+     why:"Open exploration finds the real presenting issue.",
+     opts:["Things are okay","Some stress or difficulty","Quite a lot going on","Really struggling"],
+     scores:[0,1,2,3]},
+    {t:"Mood this week",
+     en:"How has your mood been most of this week?",
+     hi:"Is hafte zyaadatar mood kaisa raha?",
+     kh:"Ka sngewbha phi nangno ka por naduh?",
+     ga:"Nang sni pilak nang sni bimba?",
+     pu:"Is hafte zyaadatar mood kida raha?",
+     why:"Direct mood check anchors the conversation.",
+     opts:["Good or okay","Up and down","Mostly low","Very low or numb"],
+     scores:[0,1,2,3]},
+    {t:"Sleep and energy",
+     en:"How is your sleep and energy?",
+     hi:"Neend aur energy kaisi hai?",
+     kh:"Ka jingiso bad snam phi nangno?",
+     ga:"Neng iso bad sni bimba?",
+     pu:"Neend te energy kaidi hai?",
+     why:"Physical indicators ground the emotional picture.",
+     opts:["Both fine","One is off","Both quite disrupted","Barely sleeping, no energy"],
+     scores:[0,1,2,3]},
+    {t:"Thoughts about hurting yourself",
+     en:"Sometimes when things feel really hard, people think about hurting themselves. Has that been there for you at all?",
+     hi:"Kabhi kabhi jab sab kuch bahut mushkil lagta hai, log apne aap ko hurt karne ke baare mein sochte hain. Kya yeh tumhare saath bhi hai?",
+     kh:"Ka ban bha ki jingsneng ia ki jingim shim ia ki bynta. Phi sngewbha nangno?",
+     ga:"Pilak pilak nang donga ang bimba ong ia nang?",
+     pu:"Kabhi kabhi jado sab kuch bahut mushkil lagda hai, log apne aap nu hurt karne baare sochde ne. Ki aisa tera naal vi hai?",
+     why:"Routine asking normalises disclosure.",
+     opts:["No","Fleeting thoughts only","Yes with some frequency","Yes with a plan"],
+     scores:[0,1,2,3]}
+  ]
+},
+substance:[
+  {t:"Frequency of use",
+   en:"How often did you use in the past week? Be honest -- no one else will hear this.",
+   hi:"Pichle hafte kitni baar liya? Seedha batao -- yahan koi nahi sunne wala.",
+   kh:"Phi lah ia ki bynta ka por naduh? Phi lah ia ki bynta ba bha.",
+   ga:"Pilak nang ong ia ki salsa ka por naduh? Nang ong bimba salsa.",
+   pu:"Pichhle hafte wich kitni baar liya? Seedha dasso -- koi nahi sunne wala.",
+   why:"Frequency establishes baseline severity.",
+   opts:["Did not use this week","1-2 times","3-5 times","Daily or almost daily"],
+   scores:[0,1,2,3]},
+  {t:"Withdrawal symptoms",
+   en:"When you do not use, do you get pain, restlessness, sweating?",
+   hi:"Jab nahi lete to dard, bechain, paseena aata hai?",
+   kh:"Ka ban bha phi kynmaw ia u, phi sngewbha ia u jingthmu, jingmat?",
+   ga:"Pilak nang bimba ong ia nang, nang sni bimba ong ia nang?",
+   pu:"Jado nahi lainde, tenu dard hunda hai, bechain rehna lagda hai?",
+   why:"Physical dependence indicator.",
+   opts:["No withdrawal symptoms","Mild discomfort","Moderate -- hard to function","Severe -- cannot manage without using"],
+   scores:[0,1,2,3]},
+  {t:"Control over use",
+   en:"Have you tried to stop or cut down and not been able to?",
+   hi:"Kya band karne ya ghataane ki koshish ki lekin nahi ho saka?",
+   kh:"Phi shim ia phi lah ia u bad ia u -- bad phi kynmaw?",
+   ga:"Nang donga ang bimba ong ia nang -- bad nang bimba?",
+   pu:"Ki tune koshish ki ki band kar len ya ghata len -- par nahi ho sakya?",
+   why:"Loss of control is a core dependence marker.",
+   opts:["Has not tried to stop","Tried and succeeded at least once","Tried but failed to cut down","Tried many times, always failed"],
+   scores:[0,0,2,3]},
+  {t:"Impact on life",
+   en:"Has using affected your work, family, or health?",
+   hi:"Kya iss aadat ki wajah se kaam, parivaar ya sehat pe asar hua hai?",
+   kh:"Ki bynta ba phi shim lah ia phi lah ia jingim, ka jingim, bad ka jingsneng?",
+   ga:"Nang donga ang bimba ong ia nang -- bimba ong ia nang?",
+   pu:"Ki is aadat ne kaam, ghar waliyan ya sehat te asar kita hai?",
+   why:"Functional impairment indicates severity.",
+   opts:["No impact","Some family tension or health issues","Significant -- work or family suffering","Severe -- lost job, thrown out, or serious health"],
+   scores:[0,1,2,3]},
+  {t:"Motivation to change",
+   en:"Do you want help to reduce or stop? Be honest.",
+   hi:"Kya tum ghataana ya band karna chahte ho? Sach bolo.",
+   kh:"Phi shim ia phi lah ia u bad ia u? Phi lah ia ki bynta ba bha.",
+   ga:"Nang donga ang bimba ong ia nang? Nang ong bimba salsa.",
+   pu:"Ki tu chahunda hai ki ghataaye ya band kare? Sach dasso.",
+   why:"Motivational stage is the most important input for care planning.",
+   opts:["Not ready -- does not want to change","Thinking about it","Wants to change but needs support","Ready and asking for help now"],
+   scores:[3,2,1,0]},
+  {t:"Previous treatment",
+   en:"Have you ever been to a de-addiction centre or had treatment before?",
+   hi:"Kya pehle kabhi nasha chhadaane waale centre gaye ya koi treatment li?",
+   kh:"Phi dem ia ka jingsneng ba bha bad ka jingim ka por?",
+   ga:"Nang ong ia ka centre bad bimba ong ia nang?",
+   pu:"Ki pehle kabhi nasha chhaddaun wale centre gaye ya koi treatment li?",
+   why:"Treatment history affects next steps. Relapse is normal.",
+   opts:["Never","Once -- completed","Once -- left early","Multiple attempts"],
+   scores:[0,0,1,2]}
+]
+};
+
+var RISK_QUESTIONS = {
+  maternal:[
+    {id:"r1",lbl:"Self-harm thoughts",
+     en:"Sometimes when pregnancy feels overwhelming, people think about hurting themselves. Has that been there for you?",
+     hi:"Kabhi kabhi garbhavastha mein log apne aap ko hurt karne ke baare mein sochte hain. Kya aisa tumhare saath bhi hua hai?",
+     kh:"Ka ban bha ki jingsneng shim ia ki bynta. Phi sngewbha nangno?",
+     ga:"Pilak pilak nang donga ang bimba ong ia nang?",
+     pu:"Kabhi kabhi pregnancy vich log apne aap nu hurt karne baare sochde ne. Ki aisa tera naal vi hoya?",
+     opts:["No -- denies any","Unsure or avoided","Yes -- expressed thoughts"],vals:["lo","me","hi"]},
+    {id:"r2",lbl:"Safety at home",
+     en:"Do you feel safe at home?",
+     hi:"Kya tum ghar mein safe feel karti ho?",
+     kh:"Phi sngewbha bha ia phi ka jingim?",
+     ga:"Nang sni bimba ia nang ka jingim?",
+     pu:"Ki tu ghar vich safe feel karti hai?",
+     opts:["Feels safe","Some concern","Unsafe or domestic violence"],vals:["lo","me","hi"]},
+    {id:"r3",lbl:"Ability to care for herself",
+     en:"Are you able to look after yourself and the baby?",
+     hi:"Kya tum apna aur bacche ka khayal rakh pa rahi ho?",
+     kh:"Phi lah ia phi sngewbha bha ia phi bad u buit?",
+     ga:"Nang ong ia nang bad bimba ong ia nang?",
+     pu:"Ki tu apna te bacche da khayal rakh sakdi hai?",
+     opts:["Managing okay","Struggling significantly"],vals:["lo","me"]}
+  ],
+  adolescent:[
+    {id:"r1",lbl:"Self-harm or suicidal thoughts",
+     en:"Have you had thoughts of hurting yourself or not wanting to be here anymore?",
+     hi:"Kya apne aap ko hurt karne ya yahan na rehne ke khayal aaye hain?",
+     kh:"Phi shim ia phi lah ia u bad ia ka jingim?",
+     ga:"Nang donga ang bimba ong ia nang?",
+     pu:"Ki apne aap nu hurt karne ya ithe naa rehne de khayaal aaye ne?",
+     opts:["No","Passive thoughts only","Active thoughts or plan"],vals:["lo","me","hi"]},
+    {id:"r2",lbl:"Trusted adult who knows",
+     en:"Is there a trusted adult -- parent, teacher -- who knows you are struggling?",
+     hi:"Kya koi bada insaan -- maa baap, teacher -- jaanta hai ki tum pareshaan ho?",
+     kh:"U bad ba shim ia phi -- u kpa, u bynta -- shim ia u?",
+     ga:"Nang donga ang bimba ong ia nang?",
+     pu:"Ki koi jaankaar adult -- maa baap, teacher -- jaanda hai ki tu pareshaan hai?",
+     opts:["Yes -- someone knows and is helping","Someone knows but not helping","No adult knows"],vals:["lo","me","hi"]},
+    {id:"r3",lbl:"Immediate safety",
+     en:"Are you safe right now -- at home, with your body, from other people?",
+     hi:"Kya tum abhi safe ho -- ghar mein, apne shareer se, doosron se?",
+     kh:"Phi sngewbha bha ia phi hadien?",
+     ga:"Nang sni bimba ia nang hadien?",
+     pu:"Ki tu hun safe hai -- ghar vich, apne shareer to?",
+     opts:["Yes -- safe","Some concern","Not safe -- immediate risk"],vals:["lo","me","hi"]}
+  ],
+  substance:[
+    {id:"r1",lbl:"Suicidal thoughts",
+     en:"Sometimes people using heavily feel like life is not worth living. Have you felt that way?",
+     hi:"Kabhi kabhi zyaada use karne walon ko lagta hai zindagi jeene ke layak nahi. Kya aisi soch aayi hai?",
+     kh:"Ka ban bha ki jingsneng shim ia ki jingim. Phi sngewbha nangno?",
+     ga:"Pilak pilak nang donga ang bimba ong ia nang?",
+     pu:"Kabhi kabhi zyaada laun waliyan nu lagda hai zindagi jeene de layak nahi. Ki aisi soch aayi hai?",
+     opts:["No","Passive or fleeting","Active thoughts or plan"],vals:["lo","me","hi"]},
+    {id:"r2",lbl:"Recent overdose",
+     en:"Have you had an overdose or nearly had one recently -- passed out, lost consciousness?",
+     hi:"Kya haal hi mein overdose hua ya hote hote reh gaya?",
+     kh:"Phi sngewbha ia u overdose bad ka por?",
+     ga:"Nang donga ang bimba ong ia nang overdose?",
+     pu:"Ki haal hi vich overdose hoya ya hone wala si?",
+     opts:["No history","Once some time ago","Recently or multiple times"],vals:["lo","me","hi"]},
+    {id:"r3",lbl:"Needle sharing",
+     en:"Are you injecting? If yes -- are you using your own equipment only?",
+     hi:"Kya injection lete ho? Agar haan -- kya apna hi saamaan use karte ho?",
+     kh:"Phi lah ia u injection?",
+     ga:"Nang ong ia injection?",
+     pu:"Ki injection launde ho? Jy haan -- ki apna hi saamaan use karde ho?",
+     opts:["Not injecting","Injecting own equipment only","Sharing needles or equipment"],vals:["lo","me","hi"]},
+    {id:"r4",lbl:"Social or family crisis",
+     en:"Has anything serious happened at home -- thrown out, violence, total breakdown?",
+     hi:"Ghar mein kuch bada hua hai -- nikala gaya, maarpeet, sab toot gaya?",
+     kh:"Ki bynta beit lah ia jingim -- lah ia u bad, jingkhang?",
+     ga:"Bimba ong ia nang ka jingim -- bimba ong ia nang?",
+     pu:"Ghar vich kuch vadhiya hoya hai -- kadh ditta gaya, maar kuti?",
+     opts:["Stable","Strained but stable","Crisis -- thrown out or violence"],vals:["lo","me","hi"]}
+  ]
+};
+
+var CARE_PLANS = {
+  maternal:{
+    lo:{focus:"Low mood -- monitor and support",tool:"Psychoeducation and behavioral activation",
+        action:"Identify one small enjoyable activity. Do it once this week.",
+        script:{hi:"Tumne aaj bahut himmat dikhai baat karke. Ek chhoti si cheez jo tum pasand karti thi -- is hafte ek baar karne ki koshish karo.",kh:"Phi lah ia ka jingim bha ia phi. Phi shim ia ka jingim ba phi sngewbha -- phi dem ia u ka por naduh.",ga:"Nang ong bimba salsa. Nang donga ang bimba ong -- nang ong ia u ka por naduh.",pu:"Tune aaj bahut himat dikhaayi gal karke. Ik chhoti si cheez jo tenu pasand si -- is hafte ek vaari karne di koshish kar."},
+        ntd:"Do not push activity if exhausted. Start very small."},
+    me:{focus:"Moderate -- safety and social support",tool:"Support mapping and safety check",
+        action:"Name one person to call if she feels worse. Save the number together.",
+        script:{hi:"Tum akeli nahi ho. Ek insaan ka naam lo jise tum call kar sako jab bahut bura lage.",kh:"Phi lah ri. Phi shim ia ka ming u bad ba phi lah ia u ka ban bha.",ga:"Nang bimba ri. Nang donga ang bimba ong ia u bad ba nang ong ia u.",pu:"Tu akeli nahi hai. Ik insaan da naam le jisnun tu call kar sakdi hai jado bahut bura lage."},
+        ntd:"Do not minimize concerns or give empty reassurance."},
+    hi:{focus:"High risk -- immediate psychologist referral",tool:"Safety planning and escalation",
+        action:"Call supervising psychologist now. Do not leave her alone.",
+        script:{hi:"Main chahta hoon ki tum safe raho. Abhi ek aur aadmi ko bata raha hoon jo tumhari madad karega.",kh:"Nga shim ia phi sngewbha bha. Nga shim ia u bad ba ong ia phi.",ga:"Nga donga ang nang sni bimba. Nga ong ia u bad ba ong ia nang.",pu:"Main chahunda haan ki tu safe rahe. Hune ek hor insaan nu das raha haan jo teri madad karega."},
+        ntd:"Do not leave alone. Do not promise confidentiality if life is at risk."}
+  },
+  adolescent:{
+    lo:{focus:"Mild distress -- build coping skills",tool:"Psychoeducation and simple coping technique",
+        action:"Teach one breathing or grounding technique. Practice together now.",
+        script:{hi:"Tum jo feel kar rahe ho woh bilkul samajh mein aata hai. Ek chhoti si cheez hai jo hum abhi try kar sakte hain.",kh:"Ki phi sngewbha nangno bha ia phi. Ki bynta ba bha ba ngi lah ia u hadien.",ga:"Nang sni bimba ia nang. Ki salsa ba bha ba ngi ong ia u hadien.",pu:"Jo tu feel kar raha hai oh bilkul samajh mein aunda hai. Ik chhoti si cheez hai jo assi hun try kar sakte ne."},
+        ntd:"Do not tell them to just think positive. Validate before teaching."},
+    me:{focus:"Moderate -- involve a trusted adult",tool:"Safety mapping and adult engagement plan",
+        action:"Identify one trusted adult. Plan how to tell them. Role-play if needed.",
+        script:{hi:"Tum bahut strong ho ki yahan aaye. Ek bada insaan hai jis par tum trust karte ho -- hum sochte hain use kaise batayein.",kh:"Phi lah ia ka jingim bha ba phi dem hadien. Ngi shim ia ki bynta ba phi lah ia u.",ga:"Nang ong bimba salsa ba nang ong hadien. Ngi ong ia ki salsa ba nang ong ia u.",pu:"Tu bahut strong hai ki aitthe aaya. Ik jaankaar adult hai jitta te tu trust karda hai -- assi sochde ne kide dasson."},
+        ntd:"Do not contact family without consent unless immediate risk exists."},
+    hi:{focus:"High risk -- safety plan and senior referral",tool:"Safety planning and immediate escalation",
+        action:"Complete safety plan now. Inform supervisor immediately. Do not leave alone.",
+        script:{hi:"Main tum par dhyan rakh raha hoon. Abhi hum milke ek plan banate hain taki tum safe raho.",kh:"Nga shim ia phi. Hadien ngi ong ia ka plan taki phi sngewbha bha.",ga:"Nga donga ang nang. Hadien ngi ong ia ka plan taki nang sni bimba.",pu:"Main tenu dhyan rakh raha haan. Hune assi milke ik plan banaange taki tu safe rahe."},
+        ntd:"Do not leave alone. Inform a responsible adult or supervisor immediately."}
+  },
+  substance:{
+    lo:{focus:"Early stage -- awareness and motivation",tool:"Motivational conversation",
+        action:"Track use for 3 days. Just observe -- no pressure to change yet.",
+        script:{hi:"Aaj jo tune share kiya uske liye shukriya. Koi pressure nahi -- bas teen din dekho aur notice karo.",kh:"Shibun ia phi ba phi lah ia ka bynta hadien. Kynmaw ia phi.",ga:"Shibun ia nang ba nang ong ia ka bynta hadien. Kynmaw ia nang.",pu:"Aaj jo tune share kiya uske liye shukriya. Koi pressure nahi -- bas teen din dekho te notice karo."},
+        ntd:"Do not push for abstinence. Ambivalence is normal."},
+    me:{focus:"Moderate dependence -- harm reduction",tool:"Harm reduction and reduction goal",
+        action:"Agree to use 1 time fewer this week. Never use alone. Check Naloxone access.",
+        script:{hi:"Main jaanta hoon yeh bahut mushkil hai. Is hafte ek baar ghataane ki koshish kar -- aur akele mat lena.",kh:"Nga shim ia ki jingthmu ba phi sngewbha. Phi lah ia ka jingim bha ia phi ka por naduh.",ga:"Nga ong ia ki jingthmu ba nang sni. Nang ong ia ka jingim bha ia nang ka por naduh.",pu:"Main jaanda haan eh bahut mushkil hai. Is hafte ik vaari ghataun di koshish kar -- te akele nahi launa."},
+        ntd:"Do not shame past use or relapses. Relapse is part of recovery."},
+    hi:{focus:"High severity -- OSAT referral required",tool:"Referral and safety planning",
+        action:"Book OSAT appointment today. Create crisis contact. Check Naloxone.",
+        script:{hi:"Tera dil bada majboot hai ki tu aaya. Agli zaruri step hai -- ek centre hai jo bilkul muft madad karta hai.",kh:"Phi lah ia ka jingim bha ia phi dem hadien. Ka jingthmu ba bha -- ka centre ba ong ia phi bha.",ga:"Nang ong bimba salsa ba nang ong hadien. Ka jingthmu ba bha -- ka centre ba ong ia nang bha.",pu:"Tera dil bahut majboot hai ki tu aaya. Agli zaruri qadam hai -- ik centre hai jo bilkul muft madad karda hai."},
+        ntd:"Do not leave without a concrete next step. Naloxone is essential at this severity."}
+  }
+};
+
+// ── FOLLOW-UP FOCUS OPTIONS BY CASE TYPE ───────────────────────────────────
+var FU_FOCUS_OPTS = {
+  maternal:[
+    "Review mood and energy this week",
+    "Discuss sleep and appetite",
+    "Check support system and relationships",
+    "Practice care plan tool from last session",
+    "Address new concern raised today",
+    "Prepare for upcoming delivery"
+  ],
+  adolescent:[
+    "Check in on coping strategy from last session",
+    "Explore triggers identified last time",
+    "Work on the avoidance or behaviour pattern",
+    "Involve trusted adult -- follow up on that plan",
+    "Address new concern raised today",
+    "General wellbeing check"
+  ],
+  substance:[
+    "Review use frequency vs last session goal",
+    "Check withdrawal and physical state",
+    "Harm reduction -- Naloxone and safety",
+    "Explore motivation and barriers to change",
+    "Discuss family or social situation",
+    "OSAT referral -- explore readiness"
+  ]
+};
+
+// ── SETUP / NAV ─────────────────────────────────────────────────────────────
+function saveKey(){
+  var k=document.getElementById('api-key-input').value.trim();
+  var e=document.getElementById('key-err');
+  if(!k.startsWith('sk-or-')||k.length<20){e.style.display='block';return;}
+  e.style.display='none'; geminiKey=k; aiOn=true; go('home'); badge();
+}
+function demoStart(){aiOn=false; go('home'); badge();}
+function badge(){
+  var b=document.getElementById('ai-badge');
+  if(aiOn){b.textContent='AI on';b.style.background='var(--grn-l)';b.style.color='var(--grn-d)';}
+  else{b.textContent='AI off';b.style.background='var(--surf2)';b.style.color='var(--t3)';}
+}
+function go(s){
+  document.querySelectorAll('.screen').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('screen-'+s).classList.add('active');
+}
+
+// ── NEW CASE ─────────────────────────────────────────────────────────────────
+function selCase(t){
+  ['mat','ado','sub'].forEach(function(x){document.getElementById('ct-'+x).classList.remove('sel');});
+  document.getElementById('ct-'+t.slice(0,3)).classList.add('sel');
+  caseType=t;
+  document.getElementById('sub-extra').style.display=t==='substance'?'block':'none';
+  document.getElementById('ado-extra').style.display=t==='adolescent'?'block':'none';
+  document.getElementById('val-casetype').classList.remove('show');
+}
+function selSub(id){['h','o','m'].forEach(function(x){document.getElementById('sub-'+x).classList.remove('sel');}); document.getElementById('sub-'+id).classList.add('sel'); subType=id;}
+function selAdo(id){['anx','dep','sh','beh','mix'].forEach(function(x){document.getElementById('ado-'+x).classList.remove('sel');}); document.getElementById('ado-'+id).classList.add('sel'); adoType=id;}
+function setLang(el,lang){
+  document.querySelectorAll('#screen-newcase .chip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel'); activeLang=lang;
+}
+function startFromNewCase(){
+  if(!document.querySelector('#screen-newcase .opt.sel')){
+    document.getElementById('val-casetype').classList.add('show');
+    document.getElementById('ct-mat').classList.add('shake');
+    setTimeout(function(){document.getElementById('ct-mat').classList.remove('shake');},400);
+    return;
+  }
+  buildSession(); go('session');
+}
+
+// ── SESSION NUM ───────────────────────────────────────────────────────────────
+function selSessNum(el, num){
+  document.querySelectorAll('#sess-num-chips .chip').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel'); sessionNum=num;
+}
+
+// ── SESSION ───────────────────────────────────────────────────────────────────
+function buildSession(){
+  var sub=document.getElementById('sess-sub');
+  var chips=document.getElementById('present-chips');
+  var bbar=document.getElementById('sess-bbar');
+  var odwarn=document.getElementById('od-warn');
+  var presenceOptions, beginBtn;
+  if(caseType==='maternal'){
+    sub.textContent='Maternal health case';
+    presenceOptions=['Patient','Husband or partner','Mother or MIL','Other family'];
+    beginBtn='<button class="btn btn-p" onclick="handleBeginSession()">Begin session</button>';
+    odwarn.style.display='none';
+  } else if(caseType==='adolescent'){
+    sub.textContent='Adolescent mental health -- '+adoType;
+    presenceOptions=['Young person','Parent or guardian','Teacher or counsellor'];
+    beginBtn='<button class="btn btn-p" onclick="handleBeginSession()">Begin session</button>';
+    odwarn.style.display='none';
+  } else {
+    sub.textContent='Substance use case';
+    presenceOptions=['Person','Family member','Peer or friend'];
+    beginBtn='<button class="btn btn-o" style="flex:none;padding:13px 14px;font-size:13px;" onclick="go(\'overdose\')">Overdose check</button><button class="btn btn-p" onclick="handleBeginSession()">Begin session</button>';
+    odwarn.style.display='block';
+  }
+  chips.innerHTML=presenceOptions.map(function(l,i){return '<button class="chip'+(i===0?' sel':'')+'" onclick="chipT(this)">'+l+'</button>';}).join('');
+  bbar.innerHTML=beginBtn;
+}
+
+function handleBeginSession(){
+  if(sessionNum>=2){
+    buildFollowUp(); go('followup');
+  } else {
+    if(caseType==='substance'){go('overdose'); return;}
+    startFlow(caseType);
+  }
+}
+
+// ── FOLLOW-UP SESSION ────────────────────────────────────────────────────────
+function loadFollowUp(type, name, detail, lastRiskVal, planText){
+  caseType=type; lastRisk=lastRiskVal; lastPlan=planText; sessionNum=2;
+  buildSession();
+  go('session');
+}
+
+function buildFollowUp(){
+  document.getElementById('fu-sub').textContent='Session '+sessionNum+' -- '+caseType;
+  document.getElementById('fu-plan-text').textContent=lastPlan||'No previous plan recorded';
+  // mood opts by case
+  var moodOpts;
+  if(caseType==='substance'){
+    moodOpts=["Better than last time","About the same","Worse than last time","Much worse -- in crisis"];
+  } else if(caseType==='maternal'){
+    moodOpts=["Feeling better","About the same","A bit worse","Much worse -- very low"];
+  } else {
+    moodOpts=["Better","About the same","Worse","Much worse"];
+  }
+  var mc=document.getElementById('fu-mood-opts'); mc.innerHTML='';
+  moodOpts.forEach(function(o){
+    var b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=function(){
+      mc.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel'); fuData.mood=o;
+      document.getElementById('val-fu2').classList.remove('show');
+    };
+    mc.appendChild(b);
+  });
+  // focus suggestion
+  var suggestion='';
+  if(lastRisk==='hi') suggestion='Safety check first -- last session had high risk flags.';
+  else if(caseType==='substance') suggestion='Review use vs last goal, then harm reduction conversation.';
+  else if(caseType==='maternal') suggestion='Check if action was completed, then update mood and support picture.';
+  else suggestion='Check coping strategy from last session, then explore what has changed.';
+  document.getElementById('fu-focus-suggestion').textContent=suggestion;
+  // focus options
+  var focusOpts=FU_FOCUS_OPTS[caseType]||FU_FOCUS_OPTS.maternal;
+  var fc=document.getElementById('fu-focus-opts'); fc.innerHTML='';
+  focusOpts.forEach(function(o){
+    var b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=function(){
+      fc.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel'); fuData.focus=o;
+      document.getElementById('val-fu3').classList.remove('show');
+    };
+    fc.appendChild(b);
+  });
+}
+
+function selFU(group, letter){
+  ['a','b','c','d'].forEach(function(l){
+    var el=document.getElementById(group+l); if(el)el.classList.remove('sel');
+  });
+  document.getElementById(group+letter).classList.add('sel');
+  if(group==='fu1') fuData.action=letter;
+  document.getElementById('val-fu1').classList.remove('show');
+}
+
+function validateAndProceedFU(){
+  var ok=true;
+  if(!fuData.action){document.getElementById('val-fu1').classList.add('show');ok=false;}
+  if(!fuData.mood){document.getElementById('val-fu2').classList.add('show');ok=false;}
+  if(!fuData.focus){document.getElementById('val-fu3').classList.add('show');ok=false;}
+  if(!ok){return;}
+  // Route based on focus chosen and risk
+  if(fuData.focus.toLowerCase().includes('safety')||lastRisk==='hi'){
+    showRisk();
+  } else if(fuData.focus.toLowerCase().includes('review')||fuData.focus.toLowerCase().includes('check in')||fuData.focus.toLowerCase().includes('use frequency')){
+    startFlow(caseType); // brief re-assessment
+  } else {
+    renderCarePlan(); go('careplan');
+  }
+}
+
+// ── FLOW START ────────────────────────────────────────────────────────────────
+function startFlow(type){
+  caseType=type; curQ=0; answers=[]; score=0; riskMap={};
+  go('guided'); renderQ();
+}
+
+// ── GUIDED QUESTIONS ──────────────────────────────────────────────────────────
+function getQuestions(){
+  if(caseType==='maternal') return FLOWS.maternal;
+  if(caseType==='substance') return FLOWS.substance;
+  var sub=adoType||'mix';
+  return FLOWS.adolescent[sub]||FLOWS.adolescent.mix;
+}
+
+function renderQ(){
+  var qs=getQuestions(); var q=qs[curQ];
+  document.getElementById('qtitle').textContent=q.t;
+  document.getElementById('q-en').textContent=q.en;
+  document.getElementById('q-hi').textContent=q.hi;
+  document.getElementById('q-kh').textContent=q.kh;
+  document.getElementById('q-ga').textContent=q.ga;
+  document.getElementById('q-pu').textContent=q.pu;
+  document.getElementById('q-why').textContent='Why: '+q.why;
+  document.getElementById('qlabel').textContent='Step '+(curQ+1)+' of '+qs.length;
+  document.getElementById('qprog').style.width=(((curQ+1)/qs.length)*100)+'%';
+  document.getElementById('qnote').value='';
+  document.getElementById('val-q').classList.remove('show');
+  switchLang(activeLang);
+  var c=document.getElementById('qopts'); c.innerHTML='';
+  q.opts.forEach(function(o,i){
+    var b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=function(){
+      c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');
+      answers[curQ]={q:q.t,a:o,score:q.scores[i]};
+      document.getElementById('val-q').classList.remove('show');
+    };
+    c.appendChild(b);
+  });
+}
+
+function switchLang(lang){
+  activeLang=lang;
+  ['hi','kh','ga','pu'].forEach(function(l){
+    var el=document.getElementById('q-'+l);
+    if(el) el.className='script-line'+(l===lang?' on':'');
+  });
+  document.querySelectorAll('#lang-tabs .ltab').forEach(function(t){
+    t.classList.toggle('on',t.dataset.lang===lang);
+  });
+}
+
+function nextQ(){
+  if(!answers[curQ]){
+    document.getElementById('val-q').classList.add('show');
+    document.getElementById('qopts').classList.add('shake');
+    setTimeout(function(){document.getElementById('qopts').classList.remove('shake');},400);
+    return;
+  }
+  score+=answers[curQ].score||0;
+  curQ++;
+  var qs=getQuestions();
+  if(curQ>=qs.length) showCoach('assessment','risk');
+  else renderQ();
+}
+
+// ── RISK CHECK ────────────────────────────────────────────────────────────────
+function showRisk(){
+  buildRiskScreen(); go('risk');
+}
+
+function buildRiskScreen(){
+  var rqs=RISK_QUESTIONS[caseType]||RISK_QUESTIONS.maternal;
+  var scroll=document.getElementById('risk-scroll'); scroll.innerHTML='';
+  var intro=document.createElement('div');
+  intro.innerHTML='<div style="background:var(--red-l);border:1.5px solid var(--red);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;"><p style="font-size:14px;font-weight:600;color:var(--red-d);">Safety screen -- ask directly</p><p style="font-size:13px;color:var(--red-d);margin-top:4px;opacity:.85;">Must be asked every session. Tap closest to what they said.</p></div>';
+  scroll.appendChild(intro);
+  rqs.forEach(function(rq,ri){
+    var sec=document.createElement('div');
+    var tabsHtml='<div class="lang-tabs" id="rl-tabs-'+rq.id+'" style="border-bottom:1px solid var(--b1);display:flex;"><button class="ltab'+(activeLang==='hi'?' on':'')+'" data-lang="hi" onclick="switchRiskLang(\''+rq.id+'\',\'hi\')">Hindi</button><button class="ltab'+(activeLang==='kh'?' on':'')+'" data-lang="kh" onclick="switchRiskLang(\''+rq.id+'\',\'kh\')">Khasi</button><button class="ltab'+(activeLang==='ga'?' on':'')+'" data-lang="ga" onclick="switchRiskLang(\''+rq.id+'\',\'ga\')">Garo</button><button class="ltab'+(activeLang==='pu'?' on':'')+'" data-lang="pu" onclick="switchRiskLang(\''+rq.id+'\',\'pu\')">Punjabi</button></div>';
+    var scriptsHtml=['hi','kh','ga','pu'].map(function(l){return '<div class="script-line'+(l===activeLang?' on':'')+'" id="rq-'+l+'-'+rq.id+'">'+rq[l]+'</div>';}).join('');
+    sec.innerHTML='<div class="lbl">'+rq.lbl+'</div><div class="val-msg" id="val-'+rq.id+'">Please answer this question</div><div class="hint" style="margin-bottom:8px;">'+tabsHtml+'<div class="hint-inner">'+scriptsHtml+'</div></div>';
+    rq.opts.forEach(function(o,i){
+      var btn=document.createElement('button');
+      btn.className='opt'; btn.textContent=o; btn.id=rq.id+'_opt_'+i;
+      var val=rq.vals[i];
+      btn.onclick=(function(rid,bval,bopts){
+        return function(){
+          bopts.forEach(function(_,j){var el=document.getElementById(rid+'_opt_'+j);if(el)el.classList.remove('sel','dsel');});
+          this.classList.add(bval==='hi'?'dsel':'sel');
+          riskMap[rid]=bval;
+          document.getElementById('val-'+rid).classList.remove('show');
+          var hasHi=Object.values(riskMap).includes('hi');
+          var rkbtn=document.getElementById('rkbtn');
+          rkbtn.className='btn '+(hasHi?'btn-d':'btn-p');
+          rkbtn.textContent=hasHi?'High risk -- escalate now':'Evaluate risk';
+        };
+      })(rq.id,val,rq.opts);
+      sec.appendChild(btn);
+    });
+    scroll.appendChild(sec);
+  });
+}
+
+function switchRiskLang(id,lang){
+  ['hi','kh','ga','pu'].forEach(function(l){
+    var el=document.getElementById('rq-'+l+'-'+id);
+    if(el) el.className='script-line'+(l===lang?' on':'');
+  });
+  var tabs=document.getElementById('rl-tabs-'+id);
+  if(tabs) tabs.querySelectorAll('.ltab').forEach(function(t){t.classList.toggle('on',t.dataset.lang===lang);});
+}
+
+function validateAndEvalRisk(){
+  var rqs=RISK_QUESTIONS[caseType]||RISK_QUESTIONS.maternal;
+  var allAnswered=true;
+  rqs.forEach(function(rq){
+    if(!riskMap[rq.id]){
+      document.getElementById('val-'+rq.id).classList.add('show');
+      allAnswered=false;
+    }
+  });
+  if(!allAnswered){
+    document.getElementById('risk-scroll').scrollTop=0;
+    return;
+  }
+  var vals=Object.values(riskMap);
+  if(vals.includes('hi')) risk='hi';
+  else if(vals.includes('me')) risk='me';
+  else risk='lo';
+  renderDecision(); renderCarePlan();
+  showCoach('risk','decision');
+}
+
+// ── DECISION ──────────────────────────────────────────────────────────────────
+function getSeverity(){
+  if(score<=2) return {cls:'low',lbl:'Low or mild'};
+  if(score<=5) return {cls:'mod',lbl:'Moderate'};
+  if(score<=8) return {cls:'high',lbl:'High severity'};
+  return {cls:'sev',lbl:'Severe'};
+}
+function renderDecision(){
+  var sev=getSeverity();
+  document.getElementById('score-display').innerHTML='<div class="score-card '+sev.cls+'"><div class="score-num">'+score+'</div><div class="score-lbl">Assessment score -- '+sev.lbl+'</div></div>';
+  var out=document.getElementById('decout'), btn=document.getElementById('decnxt'), ntd=document.getElementById('ntd');
+  var plan=CARE_PLANS[caseType]&&CARE_PLANS[caseType][risk]?CARE_PLANS[caseType][risk]:CARE_PLANS.maternal.lo;
+  ntd.textContent=plan.ntd;
+  if(risk==='hi'){
+    out.innerHTML='<div class="dec r"><h3>Immediate escalation needed</h3><ul class="slist"><li>Acute safety concern flagged</li><li>Beyond BHC scope alone</li></ul><div class="lbl" style="color:var(--red-d);margin-top:10px;">Steps now</div><ul class="slist"><li>Call supervising psychologist or OSAT immediately</li><li>Do not leave person alone</li><li>Document exact words used</li></ul></div>';
+    btn.className='btn btn-d'; btn.textContent='Escalate now';
+  } else if(risk==='me'){
+    out.innerHTML='<div class="dec a"><h3>Continue with close monitoring</h3><ul class="slist"><li>Some concern -- not acute</li><li>Needs structured follow-up within 3 days</li></ul><div class="lbl" style="color:var(--amb-d);margin-top:10px;">Steps now</div><ul class="slist"><li>Complete care plan with safety element</li><li>Inform supervisor by end of day</li></ul></div>';
+    btn.className='btn btn-w'; btn.textContent='Care plan';
+  } else {
+    out.innerHTML='<div class="dec g"><h3>Continue support</h3><ul class="slist"><li>Risk screen clear</li><li>Responding to structured support</li></ul><div class="lbl" style="color:var(--grn-d);margin-top:10px;">Steps now</div><ul class="slist"><li>Deliver care plan tool</li><li>Agree one small specific action</li><li>Book follow-up within 7 days</li></ul></div>';
+    btn.className='btn btn-p'; btn.textContent='Care plan';
+  }
+  var sr=document.getElementById('sumrisk');
+  if(sr){sr.textContent=risk==='hi'?'High':risk==='me'?'Moderate':'Low';sr.className='bdg '+(risk==='hi'?'bdg-r':risk==='me'?'bdg-a':'bdg-g');}
+  var sd=document.getElementById('sumdec');
+  if(sd) sd.textContent=risk==='hi'?'Urgent escalation':risk==='me'?'Close monitoring':'Continue support';
+}
+
+// ── CARE PLAN ─────────────────────────────────────────────────────────────────
+function renderCarePlan(){
+  var plan=CARE_PLANS[caseType]&&CARE_PLANS[caseType][risk]?CARE_PLANS[caseType][risk]:CARE_PLANS.maternal.lo;
+  document.getElementById('cp-sub').textContent=caseType+' -- '+risk+' risk';
+  var script=plan.script[activeLang]||plan.script.hi;
+  var html='<div class="lbl" style="margin-top:0;">Focus</div><div class="card" style="cursor:default;"><h3>'+plan.focus+'</h3></div>';
+  html+='<div class="lbl">Intervention</div><div class="tc"><h4>'+plan.tool+'</h4></div>';
+  html+='<div class="lbl">Agreed action</div><div class="card" style="cursor:default;"><p>'+plan.action+'</p></div>';
+  html+='<div class="lbl">Say to them</div><div class="hint"><div class="lang-tabs" id="cp-lang-tabs"><button class="ltab'+(activeLang==='hi'?' on':'')+'" onclick="updateCPLang(\'hi\')">Hindi</button><button class="ltab'+(activeLang==='kh'?' on':'')+'" onclick="updateCPLang(\'kh\')">Khasi</button><button class="ltab'+(activeLang==='ga'?' on':'')+'" onclick="updateCPLang(\'ga\')">Garo</button><button class="ltab'+(activeLang==='pu'?' on':'')+'" onclick="updateCPLang(\'pu\')">Punjabi</button></div><div class="hint-inner"><div id="cp-script" style="font-size:14px;line-height:1.9;color:var(--t1);">'+script+'</div></div></div>';
+  if(caseType==='substance'){
+    var hrMsg=risk==='hi'?'Naloxone is essential at this severity. Ensure access before you leave.':risk==='me'?'Never use alone. Save a crisis contact in their phone.':'Remind: never use alone. Tell someone before using.';
+    html+='<div class="lbl">Harm reduction reminder</div><div style="background:var(--ora-l);border:1px solid var(--ora);border-radius:var(--rs);padding:11px 14px;"><p style="font-size:13px;color:var(--ora-d);line-height:1.6;">'+hrMsg+'</p></div>';
+  }
+  document.getElementById('cp-content').innerHTML=html;
+  lastPlan=plan.action;
+  buildSummary();
+}
+function updateCPLang(lang){
+  activeLang=lang;
+  var plan=CARE_PLANS[caseType]&&CARE_PLANS[caseType][risk]?CARE_PLANS[caseType][risk]:CARE_PLANS.maternal.lo;
+  var el=document.getElementById('cp-script');
+  if(el) el.textContent=plan.script[lang]||plan.script.hi;
+  document.querySelectorAll('#cp-lang-tabs .ltab').forEach(function(t){t.classList.toggle('on',t.textContent.toLowerCase().startsWith(lang==='hi'?'hi':lang==='kh'?'kh':lang==='ga'?'ga':'pu'));});
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────────
+function buildSummary(){
+  document.getElementById('sum-sub').textContent=caseType+' -- today';
+  var sev=getSeverity();
+  var plan=CARE_PLANS[caseType]&&CARE_PLANS[caseType][risk]?CARE_PLANS[caseType][risk]:{focus:'--',action:'--'};
+  var card='<div class="srow"><span class="skey">Case type</span><span class="sval">'+caseType+'</span></div>';
+  card+='<div class="srow"><span class="skey">Session</span><span class="sval">'+sessionNum+'</span></div>';
+  card+='<div class="srow"><span class="skey">Score</span><span class="sval">'+score+' -- '+sev.lbl+'</span></div>';
+  card+='<div class="srow"><span class="skey">Risk</span><span class="sval"><span class="bdg '+(risk==='hi'?'bdg-r':risk==='me'?'bdg-a':'bdg-g')+'" id="sumrisk">'+(risk==='hi'?'High':risk==='me'?'Moderate':'Low')+'</span></span></div>';
+  card+='<div class="srow"><span class="skey">Focus</span><span class="sval">'+plan.focus+'</span></div>';
+  card+='<div class="srow"><span class="skey">Action agreed</span><span class="sval" id="sumdec">'+plan.action+'</span></div>';
+  document.getElementById('sum-card').innerHTML=card;
+  var refer=document.getElementById('sum-refer');
+  if(caseType==='substance'){refer.innerHTML='<button class="chip" onclick="chipX(this)">Yes -- refer to OSAT</button><button class="chip sel" onclick="chipX(this)">Not yet</button>';}
+  else if(risk==='hi'){refer.innerHTML='<button class="chip sel" onclick="chipX(this)">Yes -- escalate to psychologist</button><button class="chip" onclick="chipX(this)">Continue</button>';}
+  else{refer.innerHTML='<button class="chip" onclick="chipX(this)">Yes -- refer to psychologist</button><button class="chip sel" onclick="chipX(this)">Continue peer support</button>';}
+}
+
+// ── OVERDOSE ──────────────────────────────────────────────────────────────────
+function selOD(group,letter,emergency){
+  ['a','b','c'].forEach(function(l){var el=document.getElementById(group+l);if(el)el.classList.remove('sel','dsel');});
+  odAnswers[group]=letter;
+  var el=document.getElementById(group+letter); if(!el) return;
+  if(emergency){el.classList.add('dsel');document.getElementById('od-emergency').style.display='block';}
+  else el.classList.add('sel');
+  document.getElementById('val-'+group).classList.remove('show');
+}
+function validateOD(){
+  var ok=true;
+  ['od1','od2','od3'].forEach(function(g){
+    if(!odAnswers[g]){document.getElementById('val-'+g).classList.add('show');ok=false;}
+  });
+  if(!ok) return;
+  startFlow(caseType);
+}
+
+// ── COACHING MODAL ────────────────────────────────────────────────────────────
+var COACH_DEMOS = {
+  assessment:{
+    maternal:{bhc:"The gap in her support system matters more than her mood score. Build the care plan around who she can actually call, not around what she said she feels.",pat:{hi:"Aaj jo tumne share kiya woh bahut important hai. Tum apne baare mein bahut kuch jaanti hain.",kh:"Ki phi lah ia hadien bha ia phi. Phi shim ia ka jingim ba phi sngewbha.",ga:"Nang ong ia hadien bha ia nang.",pu:"Aaj jo tune share kiya oh bahut important hai."}},
+    adolescent:{bhc:"The avoidance answer tells you where their world is shrinking. Start from there -- what are they not doing now that they used to do? That is your intervention target.",pat:{hi:"Jo tum ne aaj bataya woh bahut samajhdari hai. Tum khud ko jaante ho.",kh:"Ki phi lah ia hadien bha ia phi.",ga:"Nang ong ia hadien bha ia nang.",pu:"Jo tune aaj dasiya oh bahut samajhdaari hai."}},
+    substance:{bhc:"Motivation score is the most important output here. Someone using daily who says they want to change is more workable right now than someone using less who is not ready.",pat:{hi:"Aaj jo tune share kiya uske liye shukriya. Yahan koi judge nahi karta.",kh:"Shibun ia phi ba phi lah ia ka bynta hadien.",ga:"Shibun ia nang ba nang ong ia ka bynta hadien.",pu:"Aaj jo tune share kiya uske liye shukriya."}}
+  },
+  risk:{
+    maternal:{bhc:"She stayed and answered the safety questions. That is a signal of trust. Match her bravery -- respond with honesty about the next step, not reassurance.",pat:{hi:"Yeh sawaal poochhna zaroori tha. Main isliye puchh raha hoon kyunki tumhari parwah karta hoon.",kh:"Ka bynta ba bha ba ngi lah ia u. Nga lah ia u bad nga shim ia phi.",ga:"Ka salsa ba bha ba ngi ong ia u.",pu:"Eh sawal poochhna zaroori si. Main isliye puchh raha haan kyunki teri parwah karda haan."}},
+    adolescent:{bhc:"Look at what they said about protective factors. If they named someone -- that person is your primary tool. Build the entire care plan around strengthening that one connection.",pat:{hi:"In sawaalon ke jawab dene mein bahut himmat chahiye. Shukriya ki tum ne sach bataya.",kh:"Phi lah ia ka jingim bha ia phi dem hadien.",ga:"Nang ong bimba salsa ba nang ong hadien.",pu:"Inhaan sawaalan de jawab dene vich bahut himat chahidi hai."}},
+    substance:{bhc:"Overdose history and needle sharing change your urgency level. If either is flagged -- harm reduction is the job right now, not behaviour change. Keep those goals separate.",pat:{hi:"Yeh poochhna zaroori tha. Main chahta hoon ki tu safe rahe.",kh:"Ka bynta ba bha ba ngi lah ia u. Nga shim ia phi sngewbha bha.",ga:"Ka salsa ba bha ba ngi ong ia u. Nga donga ang nang sni bimba.",pu:"Eh poochhna zaroori si. Main chahunda haan ki tu safe rahe."}}
+  },
+  decision:{
+    maternal:{bhc:"The decision is evidence-based -- you did not guess it. What you control now is how you explain the next step so she feels involved, not managed.",pat:{hi:"Hum ne sab dekha aur ek clear plan hai. Tum akele nahi ho is mein.",kh:"Ngi shim ia ka bynta ba bha. Phi lah ri.",ga:"Ngi ong ia ka bynta ba bha. Nang bimba ri.",pu:"Assi sab dekha te ik clear plan hai. Tu akeli nahi hai is vich."}},
+    adolescent:{bhc:"Frame the next step as something they are choosing, not something being done to them. Agency is the active ingredient here -- the plan only works if they own it.",pat:{hi:"Tu ne aaj bahut himmat dikhaayi. Agli step tum khud choose kar rahe ho.",kh:"Phi lah ia ka jingim bha ia phi dem hadien.",ga:"Nang ong bimba salsa ba nang ong hadien.",pu:"Tu ne aaj bahut himat dikhaayi. Agli step tu khud choose kar raha hai."}},
+    substance:{bhc:"The decision is about level of support -- not about judging their readiness or character. Communicate that distinction clearly when you explain it to them.",pat:{hi:"Agli step teri help ke liye hai -- teri aadat judge karne ke liye nahi.",kh:"Ka jingthmu ba bha ia phi.",ga:"Ka jingthmu ba bha ia nang.",pu:"Agli step teri help de liye hai -- teri aadat judge karne de liye nahi."}}
+  },
+  careplan:{
+    maternal:{bhc:"If the action takes more than 15 minutes or requires someone else's cooperation, it is too big. Make it smaller. A completed small action builds more than a failed ambitious one.",pat:{hi:"Yeh ek chhota sa qadam hai jo sirf tumhara hai. Agli baar milenge to zaroor poochhenge.",kh:"Ka jingthmu ka bha -- ia phi. Ngi lah ia u ka por ba ngi shim.",ga:"Ka jingthmu ka bha -- ia nang.",pu:"Eh ik chhota qadam hai jo sirf tera hai."}},
+    adolescent:{bhc:"Notice whether they sounded like they believed this action was possible. If there was any doubt, make it smaller still. Confidence in the plan matters more than the plan itself.",pat:{hi:"Yeh kaam jo tumne promise kiya woh teri taaqat dikhata hai.",kh:"Ka jingthmu ba phi lah ia u phi sngewbha ia phi.",ga:"Ka jingthmu ba nang ong ia u nang sni bimba ia nang.",pu:"Eh kaam jo tune promise kita oh teri taaqat dikhanda hai."}},
+    substance:{bhc:"Harm reduction is not giving up on recovery -- it is keeping the person alive until they are ready. If you feel like you are enabling, ask yourself: what is the alternative right now?",pat:{hi:"Yeh commitment tune khud ki hai. Main tere naal hoon -- judge karne ke liye nahi.",kh:"Ka jingthmu phi ri lah ia u.",ga:"Ka jingthmu nang ri ong ia u.",pu:"Eh commitment tune khud ki hai. Main tere naal haan."}}
+  }
+};
+
+function showCoach(stage, nextScreen){
+  coachNextScreen=nextScreen;
+  if(stage==='risk'||stage==='assessment') buildRiskScreen();
+  var stageLabels={assessment:'After assessment',risk:'After risk check',decision:'After decision',careplan:'After care plan'};
+  document.getElementById('cmodal-stage').textContent=stageLabels[stage]||stage;
+  document.getElementById('cloading').style.display='flex';
+  document.getElementById('cmodal-content').style.display='none';
+  document.getElementById('cmodal-bg').classList.add('open');
+  if(!aiOn){
+    var demos=COACH_DEMOS[stage]&&COACH_DEMOS[stage][caseType]?COACH_DEMOS[stage][caseType]:COACH_DEMOS[stage].maternal;
+    var patLine=demos.pat[activeLang]||demos.pat.hi;
+    setTimeout(function(){
+      document.getElementById('cloading').style.display='none';
+      document.getElementById('cmodal-content').style.display='block';
+      document.getElementById('cbhc-text').textContent=demos.bhc;
+      document.getElementById('cpat-text').textContent=patLine;
+    },700);
+    return;
+  }
+  var sessionSummary=answers.filter(Boolean).map(function(x){return x.q+': '+x.a;}).join('; ');
+  var riskSummary=Object.entries(riskMap).map(function(e){return e[0]+':'+e[1];}).join(', ');
+  var langNames={hi:'Hindi',kh:'Khasi',ga:'Garo',pu:'Punjabi'};
+  var stageDescs={
+    assessment:'BHC just completed the '+caseType+' assessment ('+getQuestions().length+' questions)',
+    risk:'BHC just completed the safety risk screen for '+caseType,
+    decision:'BHC reviewed the decision. Risk: '+risk+', Score: '+score+'/'+getMaxScore(),
+    careplan:'BHC agreed on a care plan for '+caseType+' at risk level: '+risk
+  };
+  var prompt='You are a clinical supervisor for a BHC Fellow -- a trained community health worker in India, NOT a therapist. The BHC is providing structured psychosocial support and referral, not therapy.\n\nCase: '+caseType+(caseType==='adolescent'?' ('+adoType+'sub-type)':'')+'\nSession number: '+sessionNum+'\nStage completed: '+stageDescs[stage]+'\nAnswers: '+sessionSummary+'\nRisk: '+riskSummary+' = '+risk+'\nScore: '+score+'\n\nGenerate a SHORT practical coaching response. Choose ONE type based on what the session data actually shows:\n(a) MICRO-TIP: one specific thing the BHC can do differently in the next 5 minutes, grounded in motivational interviewing or social care -- e.g. a specific phrase, a reframe to offer, a connection to make\n(b) LOCUS OF CONTROL: if the session revealed something the BHC cannot change (patient not ready, family unhelpful, severe situation) -- help them see what IS in their control vs what is not\n(c) REFLECTIVE QUESTION: one question the BHC should sit with -- not generic, specific to what this person just said\n\nChoose the type that fits THIS session. Do not default to the same type every time.\n\nAlso provide a patient-facing line in '+langNames[activeLang]+' (Roman script, warm and short -- max 2 sentences).\n\nRespond in JSON only:\n{"type":"tip|locus|reflect","bhc":"your message here","patient":"patient line in '+langNames[activeLang]+'"}\n\nJSON only, no other text.';
+  callGemini(prompt,220).then(function(raw){
+    try{
+      var clean=raw.replace(/```json|```/g,'').trim();
+      var d=JSON.parse(clean);
+      document.getElementById('cloading').style.display='none';
+      document.getElementById('cmodal-content').style.display='block';
+      document.getElementById('cbhc-text').textContent=d.bhc;
+      document.getElementById('cpat-text').textContent=d.patient;
+    } catch(e){fallbackCoach(stage);}
+  }).catch(function(err){fallbackCoach(stage, err&&err.message?err.message:'');});
+}
+function fallbackCoach(stage,errMsg){
+  var demos=COACH_DEMOS[stage]&&COACH_DEMOS[stage][caseType]?COACH_DEMOS[stage][caseType]:COACH_DEMOS[stage].maternal;
+  document.getElementById('cloading').style.display='none';
+  document.getElementById('cmodal-content').style.display='block';
+  var bhcText=demos.bhc;
+  if(errMsg){
+    if(errMsg.toLowerCase().includes('api key')||errMsg.includes('400')||errMsg.includes('403')){
+      bhcText='[API key error -- go to Setup to re-enter your OpenRouter key (sk-or-...)] '+demos.bhc;
+    } else if(errMsg.includes('429')){
+      bhcText='[Rate limit -- wait 30s and try again] '+demos.bhc;
+    }
+  }
+  document.getElementById('cbhc-text').textContent=bhcText;
+  document.getElementById('cpat-text').textContent=demos.pat[activeLang]||demos.pat.hi;
+}
+function closeCoach(){
+  document.getElementById('cmodal-bg').classList.remove('open');
+  var next=coachNextScreen;
+  if(next==='risk') buildRiskScreen();
+  if(next==='careplan') renderCarePlan();
+  if(next==='summary') buildSummary();
+  go(next);
+}
+function getMaxScore(){
+  return getQuestions().reduce(function(s,q){return s+Math.max.apply(null,q.scores);},0);
+}
+
+// ── CHAT (ASK AI) ────────────────────────────────────────────────────────────
+function getSessionContext(){
+  var sessSum=answers.filter(Boolean).map(function(x){return x.q+': '+x.a;}).join('; ')||'Assessment not yet completed';
+  var riskSum=Object.entries(riskMap).map(function(e){return e[0]+':'+e[1];}).join(', ')||'Risk screen not yet done';
+  var screens={setup:'setup',home:'home',newcase:'new case setup',session:'session start',overdose:'overdose safety check',followup:'follow-up check-in',guided:'assessment questions (step '+(curQ+1)+')',risk:'risk screen',decision:'decision',careplan:'care plan',summary:'summary'};
+  var current='unknown';
+  document.querySelectorAll('.screen').forEach(function(s){if(s.classList.contains('active'))current=screens[s.id.replace('screen-','')]||s.id;});
+  return 'Case: '+caseType+(caseType==='adolescent'?' ('+adoType+')':'')+'. Session: '+sessionNum+'. Screen: '+current+'. Answers so far: '+sessSum+'. Risk: '+riskSum+' = '+risk+'. Score: '+score+'.';
+}
+
+function openChat(){
+  chatHistory=[]; chatCount=0;
+  var body=document.getElementById('chat-body');
+  body.innerHTML='<div class="chat-msg ai" id="chat-intro">I know you are a BHC -- a trained community health worker, not a therapist. Ask me anything about this session: what to say, how to handle a difficult moment, what social support exists, or how to motivate this person without pressuring them. I draw on motivational interviewing and social care principles.</div>';
+  document.getElementById('chat-inp').value='';
+  updateChatLimit();
+  document.getElementById('chat-bg').classList.add('open');
+  document.getElementById('chat-inp').focus();
+}
+function closeChat(){document.getElementById('chat-bg').classList.remove('open');}
+function updateChatLimit(){
+  var left=chatMax-chatCount;
+  document.getElementById('chat-limit-display').textContent=left+' message'+(left!==1?'s':'')+' left';
+}
+
+function sendChat(){
+  if(chatCount>=chatMax){return;}
+  var inp=document.getElementById('chat-inp');
+  var msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  var body=document.getElementById('chat-body');
+  var userBubble=document.createElement('div');
+  userBubble.className='chat-msg user'; userBubble.textContent=msg;
+  body.appendChild(userBubble);
+  var loadBubble=document.createElement('div');
+  loadBubble.className='chat-msg ai loading';
+  loadBubble.innerHTML='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  body.appendChild(loadBubble);
+  body.scrollTop=body.scrollHeight;
+  chatHistory.push({role:'user',content:msg});
+  chatCount++;
+  updateChatLimit();
+  if(!aiOn){
+    setTimeout(function(){
+      loadBubble.className='chat-msg ai';
+      loadBubble.textContent=getDemoChat(msg);
+      chatHistory.push({role:'assistant',content:loadBubble.textContent});
+      body.scrollTop=body.scrollHeight;
+    },900);
+    return;
+  }
+  var ctx=getSessionContext();
+  var systemPrompt='You are a clinical supervisor supporting a BHC Fellow (trained community health worker) in India. The BHC is NOT a therapist -- they provide structured psychosocial support, safety referral, and motivational support within a community health framework. They cannot do therapy but can use motivational interviewing principles, social care mapping, behavioral activation prompts, and harm reduction.\n\nSession context: '+ctx+'\n\nAnswer the BHC\'s question with practical, specific guidance. Where relevant draw on: (1) motivational interviewing -- open questions, affirmations, reflective listening, summarising; (2) social care -- who else can help, what community resources exist; (3) locus of control -- help them see what is and is not in their control; (4) safety -- when to escalate vs when to stay with support. Keep answers short -- max 4 sentences. If the BHC seems to be taking on too much responsibility for patient outcomes, gently reframe.';
+  var messages=chatHistory.map(function(m){return {role:m.role,content:m.content};});
+  fetch('https://openrouter.ai/api/v1/chat/completions',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+geminiKey,
+      'HTTP-Referer':'https://bhc-cdst.app',
+      'X-Title':'BHC Clinical Decision Support'
+    },
+    body:JSON.stringify({
+      model:'meta-llama/llama-3.3-8b-instruct:free',
+      messages:[{role:'system',content:systemPrompt},{role:'user',content:messages[messages.length-1].content}],
+      max_tokens:200,
+      temperature:0.7
+    })
+  })
+  .then(function(r){
+    if(!r.ok){
+      return r.json().then(function(e){
+        var msg=e&&e.error&&e.error.message?e.error.message:'HTTP '+r.status;
+        throw new Error(msg);
+      }).catch(function(){throw new Error('HTTP '+r.status);});
+    }
+    return r.json();
+  })
+  .then(function(d){
+    var reply=d.choices[0].message.content.trim();
+    loadBubble.className='chat-msg ai';
+    loadBubble.textContent=reply;
+    chatHistory.push({role:'assistant',content:reply});
+    body.scrollTop=body.scrollHeight;
+    if(chatCount>=chatMax){
+      var limitMsg=document.createElement('div');
+      limitMsg.className='chat-limit'; limitMsg.textContent='Message limit reached for this session.';
+      body.appendChild(limitMsg);
+      document.getElementById('chat-inp').disabled=true;
+      document.querySelector('.chat-send').disabled=true;
+    }
+  }).catch(function(err){
+    loadBubble.className='chat-msg ai';
+    var errMsg=err&&err.message?err.message:'unknown error';
+    if(errMsg.toLowerCase().includes('api key')||errMsg.includes('400')||errMsg.includes('403')){
+      loadBubble.textContent='API key error: '+errMsg+'. Go to Setup (tap AI badge top-right) and re-enter your OpenRouter key.';
+    } else if(errMsg.includes('429')){
+      loadBubble.textContent='Rate limit reached -- Gemini free tier has a per-minute limit. Wait 30 seconds and try again.';
+    } else {
+      loadBubble.textContent='Could not reach AI ('+errMsg+'). Check your internet connection. For urgent clinical concerns, follow your escalation protocol.';
+    }
+    chatCount--; updateChatLimit();
+  });
+}
+
+function getDemoChat(msg){
+  var ml=msg.toLowerCase();
+  if(ml.includes('angry')||ml.includes('shout')||ml.includes('refuse')) return 'This is a sign of ambivalence, not failure. Try reflecting what you hear: "It sounds like part of you wants things to be different." Then stay quiet. Do not argue or push -- your job is to hold the space, not win the conversation.';
+  if(ml.includes('family')||ml.includes('husband')||ml.includes('parent')) return 'Family dynamics are often outside your control -- and that is okay. Your locus of control is with the person in front of you. Focus on building their internal capacity to navigate the family situation, rather than trying to change the family directly.';
+  if(ml.includes('self-harm')||ml.includes('suicide')||ml.includes('hurt')) return 'Your first step is to ask directly and calmly: "Are you safe right now?" Document what they say in their exact words. Do not leave them alone. Call your supervising psychologist -- this is not a BHC-level decision to make alone.';
+  if(ml.includes('not ready')||ml.includes('not want')||ml.includes('change')) return 'Readiness is not binary. Someone who says "I am not ready" is already thinking about it -- otherwise they would not be here. Try: "What would need to be different for you to consider it?" Then listen. Do not try to persuade.';
+  if(ml.includes('what to say')||ml.includes('how to')) return 'Try a simple open question: "What has been the hardest part of this week for you?" Then reflect back what you hear before offering anything. The most powerful thing a BHC can do is listen without rushing to a solution.';
+  return 'In demo mode -- connect a Gemini API key to get guidance specific to what this person said. For urgent concerns, always follow your escalation protocol and contact your supervisor.';
+}
+
+// ── GEMINI ────────────────────────────────────────────────────────────────────
+function callAI(prompt,maxTokens){
+  maxTokens=maxTokens||300;
+  var url='https://openrouter.ai/api/v1/chat/completions';
+  return fetch(url,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+geminiKey,
+      'HTTP-Referer':'https://bhc-cdst.app',
+      'X-Title':'BHC Clinical Decision Support'
+    },
+    body:JSON.stringify({
+      model:'meta-llama/llama-3.3-8b-instruct:free',
+      messages:[{role:'user',content:prompt}],
+      max_tokens:maxTokens,
+      temperature:0.75
+    })
+  })
+  .then(function(r){
+    if(!r.ok){return r.json().then(function(e){var m=e&&e.error&&e.error.message?e.error.message:'HTTP '+r.status;throw new Error(m);}).catch(function(){throw new Error('HTTP '+r.status);});}
+    return r.json();
+  })
+  .then(function(d){return d.choices[0].message.content.trim();});
+}
+/* alias so existing callGemini calls still work */
+function callGemini(prompt,maxTokens){return callAI(prompt,maxTokens);}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────────
+function selV(id){['v1','v2','v3'].forEach(function(v){document.getElementById(v).classList.remove('sel');});document.getElementById(id).classList.add('sel');document.getElementById('val-visit').classList.remove('show');}
+function chipT(el){el.classList.toggle('sel');}
+function chipX(el){el.closest('div').querySelectorAll('.chip').forEach(function(c){c.classList.remove('sel');});el.classList.add('sel');}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+badge();
+// Detect file:// protocol and show warning
+if(window.location.protocol==='file:'){
+  var banner=document.getElementById('file-banner');
+  if(banner) banner.style.display='block';
+}
+console.log('BHC Unified CDST v3 loaded');
+
+</script>
+</body>
+</html>
